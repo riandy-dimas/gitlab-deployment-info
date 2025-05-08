@@ -2,6 +2,19 @@
 
 Download and load this folder to your chrome browser via `chrome://extensions`. Don't forget to modify the `BASE_JIRA_URL` in `popup.js`.
 
+## Installation
+
+- Download this repository
+- Go to `chrome://extensions`
+- Click `Load unpacked`
+- Select the downloaded repository folder
+
+## How to Use
+
+- Go to one of your repositories
+- Click the extensions
+- Pin it to toolbar if necessary
+
 ## Screenshot
 
 - <img width="385" alt="image" src="https://github.com/user-attachments/assets/00cb1011-eba4-4c38-9990-d86cc18f262b" />
