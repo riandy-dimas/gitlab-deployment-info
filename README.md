@@ -13,13 +13,11 @@ Download and load this folder to your chrome browser via `chrome://extensions`. 
 
 - Go to one of your repositories
 - Click the extensions
-- Pin it to toolbar if necessary
+- Pin it to the toolbar if necessary
 
-## Screenshot
+## Preview
 
-- <img width="385" alt="image" src="https://github.com/user-attachments/assets/00cb1011-eba4-4c38-9990-d86cc18f262b" />
-- <img width="354" alt="image" src="https://github.com/user-attachments/assets/aa41c804-15b4-4a30-a546-5e70de07667a" />
-- <img width="326" alt="image" src="https://github.com/user-attachments/assets/3e7b7fc6-533f-42e3-8dca-4a5263f2f5b5" />
+![preview-gitlab-deployment-info](https://github.com/user-attachments/assets/30a92a68-ba39-4e9e-acab-e611b67358e3)
 
 ## Generated Markdown Example
 
