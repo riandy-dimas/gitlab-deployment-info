@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "GitLab Deployment Info",
+  "version": "1.0",
+  "description": "Generate information related to deployment in GitLab repos.",
+  "permissions": ["tabs", "scripting", "storage", "clipboardWrite"],
+  "host_permissions": ["https://gitlab.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://gitlab.com/*"],
+      "js": ["popup.js"]
+    }
+  ]
+}
