@@ -203,10 +203,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const repo = await getCurrentRepoInfo();
       if (!repo) {
         document.getElementById("output").innerHTML =
-          '<p style="color: red; padding: 0; margin: 0;" >Not a valid GitLab repo.</p>';
+          '<p style="color: red; padding: 0; margin: 0;" >Not a valid GitLab website.</p>';
         document.getElementById("gitlabToken").remove();
         document.getElementById("formData").remove();
-        setLoading(false);
+        document.getElementById("loader").style = "display: none";
         return;
       }
 
@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             repo.project
           }](https://gitlab.com/${repo.namespace}/${
             repo.project
-          })〙🚀*\nHi everyone! we are going to have a production deployment with these details:\n―――\n*⏰ Deployment Time:*\n       ${new Date(
+          })〙🚀*\nHi everyone! we are going to have a production deployment with these details:\n―――\n*⏰ Deployment Time*\n       ${new Date(
             dateTime.value
           ).toLocaleString("en-GB", dateOptions)}\n*🔗 Pipeline*\n       [#${
             pipeline.value
@@ -335,8 +335,9 @@ ${commits.map((c) => `- ${getEmoji(c)} ${addJiraLinks(c)}`).join("\n")}
         });
     } catch (err) {
       console.error(err);
+      document.getElementById("gitlabToken").style = "pointer-events: none";
       document.getElementById("output").innerHTML =
-        '<p style="color: red; padding: 0; margin: 0;" >Not a valid GitLab repo.</p>';
+        '<p style="color: red; padding: 0; margin: 0;" >Make sure you are inside a valid repository.</p>';
       document.getElementById("loader").style = "display: none";
     }
   });
