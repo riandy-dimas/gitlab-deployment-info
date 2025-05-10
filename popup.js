@@ -1,5 +1,14 @@
 const BASE_JIRA_URL = "https://wartek.atlassian.net";
 
+const dateOptions = {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+};
+
 function getEmoji(commit) {
   if (/feat|add/i.test(commit)) return "✨";
   if (/fix/i.test(commit)) return "🐞";
@@ -216,36 +225,72 @@ document.addEventListener("DOMContentLoaded", async () => {
             gitlabToken
           );
 
-          const markdownOutput = `### 🚀 Deployment Summary
-🏡 **Project**: [${repo.project}](https://gitlab.com/${repo.namespace}/${
+          const slackMessageOutput = `*🚀Production Release〘[${
             repo.project
-          })
-⏰ **Deploy At**: ${dateTime.value}
-🔗 **Pipeline**: [#${pipeline.value}](${pipeline.getAttribute("data-value")})
-🔍 **Comparison**: [${fromTag} ⮕ ${toTag}](${compareUrl})
-📝 **Changes included**:
-${commits
-  .map((commit) => `  - ${getEmoji(commit)} ${addJiraLinks(commit)}`)
-  .join("\n")}
+          }](https://gitlab.com/${repo.namespace}/${
+            repo.project
+          })〙🚀*\nHi everyone! we are going to have a production deployment with these details:\n―――\n*⏰ Deployment Time:*\n       ${new Date(
+            dateTime.value
+          ).toLocaleString("en-GB", dateOptions)}\n*🔗 Pipeline*\n       [#${
+            pipeline.value
+          }](${pipeline.getAttribute(
+            "data-value"
+          )})\n*🔍 Comparison*\n       [${fromTag} ⮕ ${toTag}](${compareUrl})\n*📝 Changes included:*\n${commits
+            .map((c) => `       ‣ ${getEmoji(c)} ${addJiraLinks(c)}`)
+            .join("\n")}\n―――\n`;
+
+          const markdownTableOutput = `
+### **💡 Deployment Summary**
+| Information | Details |
+|--------------------|---------|
+| 🏡 **Project** | [${repo.project}](https://gitlab.com/${repo.namespace}/${
+            repo.project
+          }) |
+| ⏰ **Deploy At** | ${new Date(dateTime.value).toLocaleString(
+            "en-GB",
+            dateOptions
+          )} |
+| 🔗 **Pipeline** | [#${pipeline.value}](${pipeline.getAttribute(
+            "data-value"
+          )}) |
+| 🔍 **Comparison** | [${fromTag} ⮕ ${toTag}](${compareUrl}) |
+
+### **📝 Change Logs**:
+${commits.map((c) => `- ${getEmoji(c)} ${addJiraLinks(c)}`).join("\n")}
 `;
 
-          const outputText = `<ul style="margin: 0; padding: 0; padding-left: 10px;">
+          const outputText = `<ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 80px; overflow: auto">
             <li>Project: <a href="${`https://gitlab.com/${repo.namespace}/${repo.project}`}" target="_blank"${
             repo.project
           }>${repo.project}</a></li>
-            <li>Deploy At: ${dateTime.value}</li>
+            <li>Deploy At: ${new Date(dateTime.value).toLocaleString(
+              "en-GB",
+              dateOptions
+            )}</li>
             <li>Pipeline: <a href="${pipeline.getAttribute(
               "data-value"
             )}" target="_blank">#${pipeline.value}</a></li>
             <li>Comparison: <a href="${compareUrl}" target="_blank">View comparison</a></li>
-            <li>Changes: <ul style="margin: 0; padding-left: 10px; max-height: 60px; overflow: auto;">${commits
+            <li>Changes: <ul style="margin: 0; padding-left: 10px;">${commits
               .map((commit) => `<li>${addJiraLinks(commit, false)}</li>`)
               .join("\n")}</ul></li>
           </ul>`;
 
-          await navigator.clipboard.writeText(markdownOutput);
-          console.log(markdownOutput);
+          document.getElementById("copyButton").style = "display: flex;";
+
           document.getElementById("output").innerHTML = outputText;
+
+          document
+            .getElementById("copyConfluence")
+            .addEventListener("click", async () => {
+              await navigator.clipboard.writeText(markdownTableOutput);
+            });
+
+          document
+            .getElementById("copySlack")
+            .addEventListener("click", async () => {
+              await navigator.clipboard.writeText(slackMessageOutput);
+            });
           setLoading(false);
         });
     } catch (err) {

@@ -71,3 +71,7 @@ form > small {
   -o-animation: rotating 0.8s linear infinite;
   animation: rotating 0.8s linear infinite;
 }
+#copyButton {
+  display: none;
+  gap: 8px;
+}

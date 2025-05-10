@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="popup.css" />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=markdown_copy,progress_activity"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=manufacturing,markdown_copy,progress_activity"
     />
   </head>
   <body>
@@ -75,11 +75,15 @@
             required
           /><br />
           <button id="generateBtn" class="btn" type="submit">
-            <span class="material-symbols-outlined"> markdown_copy </span>
-            Copy & Generate Info
+            <span class="material-symbols-outlined"> manufacturing </span>
+            Generate Info
           </button>
         </form>
         <div id="output" style="margin-top: 12px"></div>
+        <div id="copyButton">
+          <button id="copyConfluence">Copy for Confluence</button>
+          <button id="copySlack">Copy for Slack</button>
+        </div>
       </article>
     </main>
     <script src="popup.js"></script>
