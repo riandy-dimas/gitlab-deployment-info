@@ -115,12 +115,14 @@ function setLoading(loading = true) {
     document.getElementById("fromTag").setAttribute("disabled", "true");
     document.getElementById("toTag").setAttribute("disabled", "true");
     document.getElementById("pipeline").setAttribute("disabled", "true");
+    document.getElementById("dateTime").setAttribute("disabled", "true");
     document.getElementById("loader").style = "display: block";
   } else {
     document.getElementById("generateBtn").removeAttribute("disabled");
     document.getElementById("fromTag").removeAttribute("disabled");
     document.getElementById("toTag").removeAttribute("disabled");
     document.getElementById("pipeline").removeAttribute("disabled");
+    document.getElementById("dateTime").removeAttribute("disabled");
     document.getElementById("loader").style = "display: none";
   }
 }
@@ -193,9 +195,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       document
-        .getElementById("generateBtn")
-        .addEventListener("click", async () => {
+        .getElementById("formData")
+        .addEventListener("submit", async function (event) {
+          if (!this.checkValidity()) {
+            event.preventDefault(); // Cancel form submission
+            // Optionally, show native error messages
+            this.reportValidity();
+          }
+          event.preventDefault();
+
           setLoading(true);
+          const dateTime = document.getElementById("dateTime");
           const pipeline = document.getElementById("pipeline");
           const fromTag = document.getElementById("fromTag").value;
           const toTag = document.getElementById("toTag").value;
@@ -207,12 +217,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
           const markdownOutput = `### 🚀 Deployment Summary
-- 🏡 **Project**: [${repo.project}](https://gitlab.com/${repo.namespace}/${
+🏡 **Project**: [${repo.project}](https://gitlab.com/${repo.namespace}/${
             repo.project
           })
-- 🔗 **Pipeline**: [#${pipeline.value}](${pipeline.getAttribute("data-value")})
-- 🔍 **Comparison**: [${fromTag} ⮕ ${toTag}](${compareUrl})
-- 📝 **Changes included**:
+⏰ **Deploy At**: ${dateTime.value}
+🔗 **Pipeline**: [#${pipeline.value}](${pipeline.getAttribute("data-value")})
+🔍 **Comparison**: [${fromTag} ⮕ ${toTag}](${compareUrl})
+📝 **Changes included**:
 ${commits
   .map((commit) => `  - ${getEmoji(commit)} ${addJiraLinks(commit)}`)
   .join("\n")}
@@ -222,11 +233,12 @@ ${commits
             <li>Project: <a href="${`https://gitlab.com/${repo.namespace}/${repo.project}`}" target="_blank"${
             repo.project
           }>${repo.project}</a></li>
+            <li>Deploy At: ${dateTime.value}</li>
             <li>Pipeline: <a href="${pipeline.getAttribute(
               "data-value"
             )}" target="_blank">#${pipeline.value}</a></li>
             <li>Comparison: <a href="${compareUrl}" target="_blank">View comparison</a></li>
-            <li>Changes: <ul style="margin: 0; padding-left: 10px; max-height: 80px; overflow: auto;">${commits
+            <li>Changes: <ul style="margin: 0; padding-left: 10px; max-height: 60px; overflow: auto;">${commits
               .map((commit) => `<li>${addJiraLinks(commit, false)}</li>`)
               .join("\n")}</ul></li>
           </ul>`;

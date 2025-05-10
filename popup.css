@@ -32,6 +32,10 @@
   margin: 0;
 }
 
+form > small {
+  margin-bottom: 0;
+}
+
 @-webkit-keyframes rotating /* Safari and Chrome */ {
   from {
     -webkit-transform: rotate(0deg);

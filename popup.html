@@ -12,7 +12,7 @@
     />
   </head>
   <body>
-    <main class="container" style="width: 300px">
+    <main class="container" style="width: 300px; padding: 0">
       <article style="margin: 0">
         <h4 class="title" id="title">
           Deployment Information
@@ -47,13 +47,24 @@
           <hr />
         </details>
         <form id="formData">
-          <input placeholder="Pipeline" type="text" id="pipeline" />
+          <input
+            id="dateTime"
+            type="datetime-local"
+            name="datetime-local"
+            aria-label="Datetime local"
+            aria-describedby="date-time-helper"
+            required
+          />
+          <small id="date-time-helper">Deployment Time</small>
+          <br />
+          <input placeholder="Pipeline" type="text" id="pipeline" required />
           <br />
           <input
             placeholder="Source Tag"
             class="awesomplete"
             type="text"
             id="fromTag"
+            required
           />
           <br />
           <input
@@ -61,8 +72,9 @@
             class="awesomplete"
             type="text"
             id="toTag"
+            required
           /><br />
-          <button id="generateBtn" class="btn">
+          <button id="generateBtn" class="btn" type="submit">
             <span class="material-symbols-outlined"> markdown_copy </span>
             Copy & Generate Info
           </button>
