@@ -9,6 +9,44 @@ const dateOptions = {
   hour12: false,
 };
 
+function setRoundedDatetimeLocal(
+  inputElement,
+  intervalMinutes = 15,
+  minOffsetMinutes = 10
+) {
+  const now = new Date();
+  const future = new Date(now);
+
+  // Round up to the next interval
+  const minutes = now.getMinutes();
+  const roundedMinutes = Math.ceil(minutes / intervalMinutes) * intervalMinutes;
+
+  if (roundedMinutes === 60) {
+    future.setHours(now.getHours() + 1);
+    future.setMinutes(0);
+  } else {
+    future.setMinutes(roundedMinutes);
+  }
+
+  future.setSeconds(0);
+  future.setMilliseconds(0);
+
+  // Check if rounded time is less than minOffsetMinutes ahead of now
+  const diffMinutes = (future - now) / (1000 * 60);
+  if (diffMinutes < minOffsetMinutes) {
+    future.setMinutes(future.getMinutes() + intervalMinutes);
+  }
+
+  const pad = (n) => n.toString().padStart(2, "0");
+  const formatted = `${future.getFullYear()}-${pad(
+    future.getMonth() + 1
+  )}-${pad(future.getDate())}T${pad(future.getHours())}:${pad(
+    future.getMinutes()
+  )}`;
+
+  inputElement.value = formatted;
+}
+
 function getEmoji(commit) {
   if (/feat|add/i.test(commit)) return "✨";
   if (/fix/i.test(commit)) return "🐞";
@@ -202,6 +240,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           this.input.setAttribute("data-value", suggestion.value);
         },
       });
+
+      setRoundedDatetimeLocal(document.getElementById("dateTime"));
 
       document
         .getElementById("formData")
