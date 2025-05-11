@@ -10,11 +10,5 @@
     "default_icon": {
       "16": "icon.png"
     }
-  },
-  "content_scripts": [
-    {
-      "matches": ["https://gitlab.com/*"],
-      "js": ["popup.js"]
-    }
-  ]
+  }
 }

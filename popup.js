@@ -1,4 +1,16 @@
-const BASE_JIRA_URL = "https://wartek.atlassian.net";
+import {
+  fetchComparisons,
+  fetchPipelines,
+  fetchTags,
+  getCurrentRepoInfo,
+} from "./utils/gitlab.js";
+import { setRoundedDatetimeLocal } from "./utils/format.js";
+import {
+  getConfluenceMarkdown,
+  getHTMLOutput,
+  getSlackMarkdown,
+} from "./utils/output.js";
+import { showToast } from "./utils/toast.js";
 
 const dateOptions = {
   day: "2-digit",
@@ -8,153 +20,6 @@ const dateOptions = {
   minute: "2-digit",
   hour12: false,
 };
-
-function setRoundedDatetimeLocal(
-  inputElement,
-  intervalMinutes = 15,
-  minOffsetMinutes = 10
-) {
-  const now = new Date();
-  const future = new Date(now);
-
-  // Round up to the next interval
-  const minutes = now.getMinutes();
-  const roundedMinutes = Math.ceil(minutes / intervalMinutes) * intervalMinutes;
-
-  if (roundedMinutes === 60) {
-    future.setHours(now.getHours() + 1);
-    future.setMinutes(0);
-  } else {
-    future.setMinutes(roundedMinutes);
-  }
-
-  future.setSeconds(0);
-  future.setMilliseconds(0);
-
-  // Check if rounded time is less than minOffsetMinutes ahead of now
-  const diffMinutes = (future - now) / (1000 * 60);
-  if (diffMinutes < minOffsetMinutes) {
-    future.setMinutes(future.getMinutes() + intervalMinutes);
-  }
-
-  const pad = (n) => n.toString().padStart(2, "0");
-  const formatted = `${future.getFullYear()}-${pad(
-    future.getMonth() + 1
-  )}-${pad(future.getDate())}T${pad(future.getHours())}:${pad(
-    future.getMinutes()
-  )}`;
-
-  inputElement.value = formatted;
-}
-
-function getEmoji(commit) {
-  if (/feat|add/i.test(commit)) return "✨";
-  if (/fix/i.test(commit)) return "🐞";
-  if (/refactor|clean/i.test(commit)) return "♻️";
-  if (/docs/i.test(commit)) return "📝";
-  if (/test/i.test(commit)) return "🧩";
-  if (/chore/i.test(commit)) return "🔧";
-  return "❓";
-}
-
-// Function to find and link JIRA card IDs
-function addJiraLinks(commit, markdown = true) {
-  // Regular expression to match JIRA card ID (e.g., MIL-10067)
-  const jiraRegex = /([A-Z]+-\d+)/g;
-
-  // Replace any JIRA ticket ID with a clickable link
-  return commit.replace(jiraRegex, (match) => {
-    if (!markdown)
-      return `<a href="${BASE_JIRA_URL}/browse/${match}" target="_blank">${match}</a>`;
-    return `[${match}](${BASE_JIRA_URL}/browse/${match})`;
-  });
-}
-
-async function getCurrentRepoInfo() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const url = new URL(tab.url);
-
-  if (url.hostname !== "gitlab.com") return null;
-
-  // Remove leading/trailing slashes, split into parts
-  const parts = url.pathname.replace(/^\/|\/$/g, "").split("/");
-
-  // GitLab structure: /group1/group2/.../project/...
-  // We need to find where the `-` segment starts (e.g., -/merge_requests)
-  const dashIndex = parts.findIndex((p) => p === "-");
-
-  // If there's no dash segment, everything is namespace + project
-  const projectParts = dashIndex === -1 ? parts : parts.slice(0, dashIndex);
-
-  if (projectParts.length < 2) return null;
-
-  const project = projectParts[projectParts.length - 1];
-  const namespace = projectParts.slice(0, -1).join("/");
-
-  return { namespace, project };
-}
-
-async function fetchTags(namespace, project, token) {
-  const encodedPath = encodeURIComponent(`${namespace}/${project}`);
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const response = await fetch(
-    `https://gitlab.com/api/v4/projects/${encodedPath}/repository/tags`,
-    {
-      headers,
-    }
-  );
-
-  if (!response.ok) throw new Error("Failed to fetch tags");
-  const tags = await response.json();
-  tags.sort(
-    (a, b) =>
-      new Date(b.commit.created_at).valueOf() -
-      new Date(a.commit.created_at).valueOf()
-  );
-  return tags.map((tag) => tag.name);
-}
-
-async function fetchPipelines(namespace, project, token) {
-  const encodedPath = encodeURIComponent(`${namespace}/${project}`);
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const response = await fetch(
-    `https://gitlab.com/api/v4/projects/${encodedPath}/pipelines`,
-    {
-      headers,
-    }
-  );
-
-  if (!response.ok) throw new Error("Failed to fetch pipelines");
-  const pipelines = await response.json();
-  return pipelines.map((pipeline) => ({
-    label: `${pipeline.id} - ${pipeline.ref}`,
-    value: pipeline.web_url,
-  }));
-}
-async function fetchComparisons(namespace, project, token) {
-  const encodedPath = encodeURIComponent(`${namespace}/${project}`);
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-  const fromTag = document.getElementById("fromTag").value;
-  const toTag = document.getElementById("toTag").value;
-
-  if (!fromTag || !toTag) {
-    throw new Error("From and to tag is not defined");
-  }
-
-  const response = await fetch(
-    `https://gitlab.com/api/v4/projects/${encodedPath}/repository/compare?from=${fromTag}&to=${toTag}`,
-    {
-      headers,
-    }
-  );
-
-  if (!response.ok) throw new Error("Failed to fetch comparisons");
-  const comparisons = await response.json();
-  return comparisons.commits
-    .filter((commit) => !commit.title.startsWith("Merge branch"))
-    .map((commit) => commit.title);
-}
 
 function setLoading(loading = true) {
   if (loading) {
@@ -267,95 +132,38 @@ document.addEventListener("DOMContentLoaded", async () => {
             gitlabToken
           );
 
-          const slackMessageOutput = `*🚀Production Release〘[${
-            repo.project
-          }](https://gitlab.com/${repo.namespace}/${
-            repo.project
-          })〙🚀*\nHi everyone! we are going to have a production deployment with these details:\n―――\n*⏰ Deployment Time*\n       ${new Date(
-            dateTime.value
-          ).toLocaleString("en-GB", dateOptions)}\n*🔗 Pipeline*\n       [#${
-            pipeline.value
-          }](${pipeline.getAttribute(
-            "data-value"
-          )})\n*🔍 Comparison*\n       [${fromTag} ⮕ ${toTag}](${compareUrl})\n*📝 Changes included:*\n${commits
-            .map((c) => `       ‣ ${getEmoji(c)} ${addJiraLinks(c)}`)
-            .join("\n")}\n―――\n`;
+          const data = {
+            repo,
+            commits,
+            compareUrl,
+            dateTime,
+            pipeline,
+          };
 
-          const markdownTableOutput = `
-### **💡 Deployment Summary**
-| Information | Details |
-|--------------------|---------|
-| 🏡 **Project** | [${repo.project}](https://gitlab.com/${repo.namespace}/${
-            repo.project
-          }) |
-| ⏰ **Deploy At** | ${new Date(dateTime.value).toLocaleString(
-            "en-GB",
-            dateOptions
-          )} |
-| 🔗 **Pipeline** | [#${pipeline.value}](${pipeline.getAttribute(
-            "data-value"
-          )}) |
-| 🔍 **Comparison** | [${fromTag} ⮕ ${toTag}](${compareUrl}) |
-
-### **📝 Change Logs**:
-${commits.map((c) => `- ${getEmoji(c)} ${addJiraLinks(c)}`).join("\n")}
-`;
-
-          const outputText = `<ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 80px; overflow: auto">
-            <li>Project: <a href="${`https://gitlab.com/${repo.namespace}/${repo.project}`}" target="_blank"${
-            repo.project
-          }>${repo.project}</a></li>
-            <li>Deploy At: ${new Date(dateTime.value).toLocaleString(
-              "en-GB",
-              dateOptions
-            )}</li>
-            <li>Pipeline: <a href="${pipeline.getAttribute(
-              "data-value"
-            )}" target="_blank">#${pipeline.value}</a></li>
-            <li>Comparison: <a href="${compareUrl}" target="_blank">View comparison</a></li>
-            <li>Changes: <ul style="margin: 0; padding-left: 10px;">${commits
-              .map((commit) => `<li>${addJiraLinks(commit, false)}</li>`)
-              .join("\n")}</ul></li>
-          </ul>`;
+          const slackOutput = getSlackMarkdown(data);
+          const confluenceOutput = getConfluenceMarkdown(data);
+          const htmlOuput = getHTMLOutput(data);
 
           document.getElementById("copyButton").style = "display: flex;";
 
-          document.getElementById("output").innerHTML = outputText;
+          document.getElementById("output").innerHTML = htmlOuput;
 
           document
             .getElementById("copyConfluence")
             .addEventListener("click", async () => {
-              await navigator.clipboard.writeText(markdownTableOutput);
-              Toastify({
-                text: "<strong>Confluence Markdown copied!</strong><br/>Paste in a new Confluence page or update existing one.",
-                className: "toast",
-                duration: 3000,
-                gravity: "top",
-                position: "left",
-                stopOnFocus: true,
-                escapeMarkup: false,
-                offset: {
-                  y: -14,
-                },
-              }).showToast();
+              await navigator.clipboard.writeText(confluenceOutput);
+              showToast(
+                `<strong>Confluence Markdown copied!</strong><br/>Paste in a new Confluence page or update existing one.`
+              );
             });
 
           document
             .getElementById("copySlack")
             .addEventListener("click", async () => {
-              await navigator.clipboard.writeText(slackMessageOutput);
-              Toastify({
-                text: "<strong>Slack Markdown copied!</strong><br />Paste in Slack message and use <code>cmd + shift + f</code> to format it.",
-                className: "toast",
-                duration: 3000,
-                gravity: "top",
-                position: "left",
-                stopOnFocus: true,
-                escapeMarkup: false,
-                offset: {
-                  y: -14,
-                },
-              }).showToast();
+              await navigator.clipboard.writeText(slackOutput);
+              showToast(
+                `<strong>Slack Markdown copied!</strong><br />Paste in Slack message and use <code>cmd + shift + f</code> to format it.`
+              );
             });
           setLoading(false);
         });
