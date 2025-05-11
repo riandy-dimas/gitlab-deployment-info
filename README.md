@@ -1,10 +1,13 @@
 # gitlab-deployment-info
 
-Download and load this folder to your chrome browser via `chrome://extensions`. Don't forget to modify the `BASE_JIRA_URL` in `popup.js` (if necessary default to `wartek.atlassian.net`).
+Generate markdown documentation for your deployment. Pick deployment date & time, pipeline, and tags. Your documentation is ready to be pasted in Confluence and Slack!
+
+![preview-gitlab-deployment-info](https://github.com/user-attachments/assets/1c8e030c-56f0-4f2a-b034-5f3b5df44ab2)
 
 ## Installation
 
 - Download this repository
+- Update the `BASE_JIRA_URL` in `popup.js` (if necessary, default to `wartek.atlassian.net`)
 - Go to `chrome://extensions`
 - Click `Load unpacked`
 - Select the downloaded repository folder
@@ -14,10 +17,6 @@ Download and load this folder to your chrome browser via `chrome://extensions`. 
 - Go to one of your repositories
 - Click the extensions
 - Pin it to the toolbar if necessary
-
-## Preview
-
-![preview-gitlab-deployment-info](https://github.com/user-attachments/assets/30a92a68-ba39-4e9e-acab-e611b67358e3)
 
 ## Generated Confluence Example
 
