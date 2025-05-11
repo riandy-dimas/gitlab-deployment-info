@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       setLoading(true);
 
-      const repo = await getCurrentRepoInfo();
+      const repo = await getCurrentRepoInfo(gitlabToken);
       if (!repo) {
         document.getElementById("output").innerHTML =
           '<p style="color: red; padding: 0; margin: 0;" >Not a valid GitLab website.</p>';

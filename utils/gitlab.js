@@ -1,4 +1,4 @@
-export async function getCurrentRepoInfo() {
+export async function getCurrentRepoInfo(token) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const url = new URL(tab.url);
 
@@ -19,7 +19,19 @@ export async function getCurrentRepoInfo() {
   const project = projectParts[projectParts.length - 1];
   const namespace = projectParts.slice(0, -1).join("/");
 
-  return { namespace, project };
+  const encodedPath = encodeURIComponent(`${namespace}/${project}`);
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const response = await fetch(
+    `https://gitlab.com/api/v4/projects/${encodedPath}`,
+    {
+      headers,
+    }
+  );
+  if (!response.ok) throw new Error("Failed to fetch project info");
+
+  const { name, web_url } = await response.json();
+
+  return { name, namespace, project, web_url };
 }
 
 export async function fetchTags(namespace, project, token) {
@@ -59,6 +71,7 @@ export async function fetchPipelines(namespace, project, token) {
     value: pipeline.web_url,
   }));
 }
+
 export async function fetchComparisons(namespace, project, token) {
   const encodedPath = encodeURIComponent(`${namespace}/${project}`);
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
