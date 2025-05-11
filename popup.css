@@ -79,3 +79,7 @@ form > small {
   display: none;
   gap: 8px;
 }
+.toast {
+  background: var(--pico-tooltip-background-color);
+  color: var(--pico-tooltip-color);
+}

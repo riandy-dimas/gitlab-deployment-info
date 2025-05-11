@@ -222,12 +222,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         sort: false,
         minChars: 0,
         maxItems: 10,
+        autoFirst: true,
       });
       new Awesomplete(document.getElementById("toTag"), {
         list: tags,
         sort: false,
         minChars: 0,
         maxItems: 10,
+        autoFirst: true,
       });
       new Awesomplete(document.getElementById("pipeline"), {
         list: pipelines,
@@ -324,12 +326,36 @@ ${commits.map((c) => `- ${getEmoji(c)} ${addJiraLinks(c)}`).join("\n")}
             .getElementById("copyConfluence")
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(markdownTableOutput);
+              Toastify({
+                text: "<strong>Confluence Markdown copied!</strong><br/>Paste in a new Confluence page or update existing one.",
+                className: "toast",
+                duration: 3000,
+                gravity: "top",
+                position: "left",
+                stopOnFocus: true,
+                escapeMarkup: false,
+                offset: {
+                  y: -14,
+                },
+              }).showToast();
             });
 
           document
             .getElementById("copySlack")
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(slackMessageOutput);
+              Toastify({
+                text: "<strong>Slack Markdown copied!</strong><br />Paste in Slack message and use <code>cmd + shift + f</code> to format it.",
+                className: "toast",
+                duration: 3000,
+                gravity: "top",
+                position: "left",
+                stopOnFocus: true,
+                escapeMarkup: false,
+                offset: {
+                  y: -14,
+                },
+              }).showToast();
             });
           setLoading(false);
         });
