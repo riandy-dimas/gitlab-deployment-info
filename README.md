@@ -10,17 +10,17 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 
 ## ✨ Features
 
-* 📝 Automatically generates Confluence and Slack-friendly deployment notes
-* 🔗 Includes pipeline and tag comparison links from GitLab
-* 🧠 Automatically appends links to JIRA issues mentioned in the changelog
-* 🧩 Works as a Chrome extension on GitLab repository pages
+- 📝 Automatically generates Confluence and Slack-friendly deployment notes
+- 🔗 Includes pipeline and tag comparison links from GitLab
+- 🧠 Automatically appends links to JIRA issues mentioned in the changelog
+- 🧩 Works as a Chrome extension on GitLab repository pages
 
 ---
 
 ## 🔧 Installation
 
 1. **Clone or download** this repository
-2. **Edit the `BASE_JIRA_URL`** in `popup.js` if needed (default: `https://wartek.atlassian.net`)
+2. **Edit the `BASE_JIRA_URL`** in `format.js` if needed (default: `https://wartek.atlassian.net`)
 3. Open `chrome://extensions` in your browser
 4. Enable **Developer mode** (top right corner)
 5. Click **Load unpacked**
@@ -41,24 +41,26 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 ## 📄 Confluence Output Example
 
 ```
+
 ### **💡 Deployment Summary**
-| Information      | Details |
-|------------------|---------|
-| 🏡 **Project**   | [canvas-lti](https://gitlab.com/wartek-id/guru/belajar/canvas-lti) |
-| ⏰ **Deploy At** | 11 May 2025, 14:15 |
-| 🔗 **Pipeline**  | [#1801689260 - release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/pipelines/1801689260) |
-| 🔍 **Comparison**| [release-production-20250324-0935 ⮕ release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/compare/release-production-20250324-0935...release-production-20250506-0745) |
+| Information | Details |
+|--------------------|---------|
+| 🏡 **Project** | [Canvas LTI](https://gitlab.com/wartek-id/guru/belajar/canvas-lti) |
+| ⏰ **Deployment Time** | 11 May 2025, 19:15 |
+| 🏷️ **Tag** | [release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/tags/release-production-20250506-0745) |
+| 🔗 **Pipeline** | [#1801689260](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/pipelines/1801689260) |
+| 🔍 **Comparison** | [release-production-20250324-0935 ⮕ release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/compare/release-production-20250324-0935...release-production-20250506-0745) |
 
 ### **📝 Change Logs**:
 - 🔧 chore: upgrade next
 - ✨ feat: New landing page GNN
 - ✨ feat: change base url LTI config generator
-- ✨ [MIL-10096](https://wartek.atlassian.net/browse/MIL-10096) Redirect canvas-fe to lms-lti
-- 🐞 fix: remove redirection that affects signature validation
+- ✨ [MIL-10096](https://wartek.atlassian.net/browse/MIL-10096) Feat: redirect canvas-fe.guru-lms.belajar.id host to lms-lti.kemdikbud.go.id
+- 🐞 fix: remove redirection since it will affect signature validation
 - 🐞 fix: undefined config generator host
-- ✨ [MIL-10067](https://wartek.atlassian.net/browse/MIL-10067) Diklat list landing page
-- 🐞 fix: pageSize 10 on diklat list fetch
-- 🐞 fix: diklat URL
+- ✨ [MIL-10067](https://wartek.atlassian.net/browse/MIL-10067) Feat: diklat list landing page
+- 🐞 fix: pageSize 10 fetch diklat list
+- 🐞 Fix/diklat url
 ```
 
 ---
@@ -66,26 +68,30 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 ## 💬 Slack Output Example
 
 ```
-*🚀 Production Release〘[canvas-lti](https://gitlab.com/wartek-id/guru/belajar/canvas-lti)〙🚀*
-Hi everyone! We're deploying to production with the following details:
-―――
+*🚀Production Release〘[Canvas LTI](https://gitlab.com/wartek-id/guru/belajar/canvas-lti)〙🚀*
+Hi everyone! We’ll be deploying to production with the following details:
+---
 *⏰ Deployment Time*
-       11 May 2025, 14:15
+       11 May 2025, 19:15
+*🏷️ Tag*
+       [release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/tags/release-production-20250506-0745)
 *🔗 Pipeline*
-       [#1801689260 - release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/pipelines/1801689260)
+       [#1801689260](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/pipelines/1801689260)
 *🔍 Comparison*
        [release-production-20250324-0935 ⮕ release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/compare/release-production-20250324-0935...release-production-20250506-0745)
 *📝 Changes included:*
-       ‣ 🔧 chore: upgrade next  
-       ‣ ✨ feat: New landing page GNN  
-       ‣ ✨ feat: change base url LTI config generator  
-       ‣ ✨ [MIL-10096](https://wartek.atlassian.net/browse/MIL-10096) Redirect canvas-fe to lms-lti  
-       ‣ 🐞 fix: remove redirection that affects signature validation  
-       ‣ 🐞 fix: undefined config generator host  
-       ‣ ✨ [MIL-10067](https://wartek.atlassian.net/browse/MIL-10067) Diklat list landing page  
-       ‣ 🐞 fix: pageSize 10 on diklat list fetch  
-       ‣ 🐞 fix: diklat URL  
-―――
+       ‣ 🔧 chore: upgrade next
+       ‣ ✨ feat: New landing page GNN
+       ‣ ✨ feat: change base url LTI config generator
+       ‣ ✨ [MIL-10096](https://wartek.atlassian.net/browse/MIL-10096) Feat: redirect canvas-fe.guru-lms.belajar.id host to lms-lti.kemdikbud.go.id
+       ‣ 🐞 fix: remove redirection since it will affect signature validation
+       ‣ 🐞 fix: undefined config generator host
+       ‣ ✨ [MIL-10067](https://wartek.atlassian.net/browse/MIL-10067) Feat: diklat list landing page
+       ‣ 🐞 fix: pageSize 10 fetch diklat list
+       ‣ 🐞 Fix/diklat url
+---
+Please reach out if you have any questions or concerns.
+Thank you! 🚢💨
 ```
 
 > 💡 **Tip for Slack:** After pasting the generated text into a Slack message box, select all the text and press `Cmd + Shift + F` (on Mac) to apply block formatting automatically.
@@ -94,5 +100,5 @@ Hi everyone! We're deploying to production with the following details:
 
 ## 🧠 Notes
 
-* This extension scans Git logs between selected tags and tries to match JIRA keys (e.g., `MIL-12345`) and automatically converts them into links using the provided `BASE_JIRA_URL`.
-* Make sure your commit messages consistently include JIRA issue keys to take full advantage of this feature.
+- This extension scans Git logs between selected tags and tries to match JIRA keys (e.g., `MIL-12345`) and automatically converts them into links using the provided `BASE_JIRA_URL`.
+- Make sure your commit messages consistently include JIRA issue keys to take full advantage of this feature.
