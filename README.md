@@ -88,6 +88,8 @@ Hi everyone! We're deploying to production with the following details:
 ―――
 ```
 
+> 💡 **Tip for Slack:** After pasting the generated text into a Slack message box, select all the text and press `Cmd + Shift + F` (on Mac) to apply block formatting automatically.
+
 ---
 
 ## 🧠 Notes
