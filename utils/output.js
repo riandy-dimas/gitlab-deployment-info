@@ -16,18 +16,29 @@ export function getSlackMarkdown({
   compareUrl,
   dateTime,
 }) {
-  return `
-*🚀Production Release〘[${repo.name}](https://gitlab.com/${repo.namespace}/${
-    repo.project
-  })〙🚀*\nHi everyone! we are going to have a production deployment with these details:\n―――\n*⏰ Deployment Time*\n       ${new Date(
-    dateTime.value
-  ).toLocaleString("en-GB", DATE_OPTIONS)}\n*🔗 Pipeline*\n       [#${
-    pipeline.value
-  }](${pipeline.getAttribute(
+  const [pipelineNumber, pipelineRef] = pipeline.value.split(" - ");
+  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${pipelineRef}`;
+  return `*🚀Production Release〘[${repo.name}](https://gitlab.com/${
+    repo.namespace
+  }/${repo.project})〙🚀*
+Hi everyone! We’ll be deploying to production with the following details:
+---
+*⏰ Deployment Time*\n       ${new Date(dateTime.value).toLocaleString(
+    "en-GB",
+    DATE_OPTIONS
+  )}
+*🏷️ Tag*\n       [${pipelineRef}](${refURL})
+*🔗 Pipeline*\n       [#${pipelineNumber}](${pipeline.getAttribute(
     "data-value"
-  )})\n*🔍 Comparison*\n       [${fromTag} ⮕ ${toTag}](${compareUrl})\n*📝 Changes included:*\n${commits
+  )})
+*🔍 Comparison*\n       [${fromTag.value} ⮕ ${
+    toTag.value
+  }](${compareUrl})\n*📝 Changes included:*\n${commits
     .map((c) => `       ‣ ${getEmoji(c)} ${addJiraLinks(c)}`)
-    .join("\n")}\n―――\n
+    .join("\n")}
+---
+Please reach out if you have any questions or concerns.  
+Thank you! 🚢💨
 `;
 }
 
@@ -38,6 +49,8 @@ export function getConfluenceMarkdown({
   compareUrl,
   dateTime,
 }) {
+  const [pipelineNumber, pipelineRef] = pipeline.value.split(" - ");
+  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${pipelineRef}`;
   return `
 ### **💡 Deployment Summary**
 | Information | Details |
@@ -45,14 +58,15 @@ export function getConfluenceMarkdown({
 | 🏡 **Project** | [${repo.name}](https://gitlab.com/${repo.namespace}/${
     repo.project
   }) |
-| ⏰ **Deploy At** | ${new Date(dateTime.value).toLocaleString(
+| ⏰ **Deployment Time** | ${new Date(dateTime.value).toLocaleString(
     "en-GB",
     DATE_OPTIONS
   )} |
-| 🔗 **Pipeline** | [#${pipeline.value}](${pipeline.getAttribute(
+| 🏷️ **Tag** | [${pipelineRef}](${refURL}) |
+| 🔗 **Pipeline** | [#${pipelineNumber}](${pipeline.getAttribute(
     "data-value"
   )}) |
-| 🔍 **Comparison** | [${fromTag} ⮕ ${toTag}](${compareUrl}) |
+| 🔍 **Comparison** | [${fromTag.value} ⮕ ${toTag.value}](${compareUrl}) |
 
 ### **📝 Change Logs**:
 ${commits.map((c) => `- ${getEmoji(c)} ${addJiraLinks(c)}`).join("\n")}
@@ -66,19 +80,22 @@ export function getHTMLOutput({
   compareUrl,
   dateTime,
 }) {
+  const [pipelineNumber, pipelineRef] = pipeline.value.split(" - ");
+  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${pipelineRef}`;
   return `
 <ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 80px; overflow: auto">
-  <li>Project: <a href="${`https://gitlab.com/${repo.namespace}/${repo.project}`}" target="_blank"${
-    repo.project
-  }>${repo.name}</a></li>
+  <li>Project: <a data-new-tab href="${`https://gitlab.com/${repo.namespace}/${repo.project}`}">${
+    repo.name
+  }</a></li>
   <li>Deploy At: ${new Date(dateTime.value).toLocaleString(
     "en-GB",
     DATE_OPTIONS
   )}</li>
-  <li>Pipeline: <a href="${pipeline.getAttribute(
+  <li>Pipeline: <a data-new-tab href="${pipeline.getAttribute(
     "data-value"
-  )}" target="_blank">#${pipeline.value}</a></li>
-  <li>Comparison: <a href="${compareUrl}" target="_blank">View comparison</a></li>
+  )}" >#${pipelineNumber}</a></li>
+  <li>Tag: <a data-new-tab href="${refURL}" >${pipelineRef}</a></li>
+  <li>Comparison: <a data-new-tab href="${compareUrl}" >View comparison</a></li>
   <li>Changes: <ul style="margin: 0; padding-left: 10px;">${commits
     .map((commit) => `<li>${addJiraLinks(commit, false)}</li>`)
     .join("\n")}</ul></li>

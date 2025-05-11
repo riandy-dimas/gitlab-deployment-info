@@ -2,7 +2,8 @@ import {
   fetchComparisons,
   fetchPipelines,
   fetchTags,
-  getCurrentRepoInfo,
+  fetchCurrentRepoInfo,
+  getRepoSlug,
 } from "./utils/gitlab.js";
 import { setRoundedDatetimeLocal } from "./utils/format.js";
 import {
@@ -11,6 +12,7 @@ import {
   getSlackMarkdown,
 } from "./utils/output.js";
 import { showToast } from "./utils/toast.js";
+import { makeLinksOpenInTab } from "./utils/open-link.js";
 
 const dateOptions = {
   day: "2-digit",
@@ -64,9 +66,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       setLoading(true);
-
-      const repo = await getCurrentRepoInfo(gitlabToken);
-      if (!repo) {
+      const repoSlug = await getRepoSlug();
+      if (!repoSlug) {
         document.getElementById("output").innerHTML =
           '<p style="color: red; padding: 0; margin: 0;" >Not a valid GitLab website.</p>';
         document.getElementById("gitlabToken").remove();
@@ -75,9 +76,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const [tags, pipelines] = await Promise.all([
-        fetchTags(repo.namespace, repo.project, gitlabToken),
-        fetchPipelines(repo.namespace, repo.project, gitlabToken),
+      const [repo, tags, pipelines] = await Promise.all([
+        fetchCurrentRepoInfo(gitlabToken),
+        fetchTags(repoSlug.namespace, repoSlug.project, gitlabToken),
+        fetchPipelines(repoSlug.namespace, repoSlug.project, gitlabToken),
       ]);
 
       setLoading(false);
@@ -165,6 +167,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 `<strong>Slack Markdown copied!</strong><br />Paste in Slack message and use <code>cmd + shift + f</code> to format it.`
               );
             });
+
+          makeLinksOpenInTab();
           setLoading(false);
         });
     } catch (err) {

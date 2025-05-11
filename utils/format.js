@@ -56,7 +56,7 @@ export function addJiraLinks(commit, markdown = true) {
   // Replace any JIRA ticket ID with a clickable link
   return commit.replace(jiraRegex, (match) => {
     if (!markdown)
-      return `<a href="${BASE_JIRA_URL}/browse/${match}" target="_blank">${match}</a>`;
+      return `<a data-new-tab href="${BASE_JIRA_URL}/browse/${match}">${match}</a>`;
     return `[${match}](${BASE_JIRA_URL}/browse/${match})`;
   });
 }

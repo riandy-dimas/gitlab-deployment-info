@@ -1,4 +1,27 @@
-export async function getCurrentRepoInfo(token) {
+export async function getRepoSlug() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = new URL(tab.url);
+
+  if (url.hostname !== "gitlab.com") return null;
+
+  // Remove leading/trailing slashes, split into parts
+  const parts = url.pathname.replace(/^\/|\/$/g, "").split("/");
+
+  // GitLab structure: /group1/group2/.../project/...
+  // We need to find where the `-` segment starts (e.g., -/merge_requests)
+  const dashIndex = parts.findIndex((p) => p === "-");
+
+  // If there's no dash segment, everything is namespace + project
+  const projectParts = dashIndex === -1 ? parts : parts.slice(0, dashIndex);
+
+  if (projectParts.length < 2) return null;
+
+  const project = projectParts[projectParts.length - 1];
+  const namespace = projectParts.slice(0, -1).join("/");
+  return { project, namespace };
+}
+
+export async function fetchCurrentRepoInfo(token) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const url = new URL(tab.url);
 
@@ -69,6 +92,7 @@ export async function fetchPipelines(namespace, project, token) {
   return pipelines.map((pipeline) => ({
     label: `${pipeline.id} - ${pipeline.ref}`,
     value: pipeline.web_url,
+    ref: pipeline.ref,
   }));
 }
 
