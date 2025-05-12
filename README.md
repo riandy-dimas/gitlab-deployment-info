@@ -68,27 +68,27 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 ## 💬 Slack Output Example
 
 ```
-*🚀Production Release〘[Canvas LTI](https://gitlab.com/wartek-id/guru/belajar/canvas-lti)〙🚀*
+*🚀  Production Release〘[Canvas LTI](https://gitlab.com/wartek-id/guru/belajar/canvas-lti)〙🚀*
 Hi everyone! We’ll be deploying to production with the following details:
----
-*⏰ Deployment Time*
-       11 May 2025, 19:15
-*🏷️ Tag*
-       [release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/tags/release-production-20250506-0745)
-*🔗 Pipeline*
-       [#1801689260](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/pipelines/1801689260)
-*🔍 Comparison*
-       [release-production-20250324-0935 ⮕ release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/compare/release-production-20250324-0935...release-production-20250506-0745)
-*📝 Changes included:*
-       ‣ 🔧 chore: upgrade next
-       ‣ ✨ feat: New landing page GNN
-       ‣ ✨ feat: change base url LTI config generator
-       ‣ ✨ [MIL-10096](https://wartek.atlassian.net/browse/MIL-10096) Feat: redirect canvas-fe.guru-lms.belajar.id host to lms-lti.kemdikbud.go.id
-       ‣ 🐞 fix: remove redirection since it will affect signature validation
-       ‣ 🐞 fix: undefined config generator host
-       ‣ ✨ [MIL-10067](https://wartek.atlassian.net/browse/MIL-10067) Feat: diklat list landing page
-       ‣ 🐞 fix: pageSize 10 fetch diklat list
-       ‣ 🐞 Fix/diklat url
+
+>*⏰ Deployment Time*: 12 May 2025, 07:30
+>*🏷️ Tag*: [release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/tags/release-production-20250506-0745)
+>*🔗 Pipeline*: [#1801689260](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/pipelines/1801689260)
+>*🔍 Comparison*: [release-production-20250324-0935 ⮕ release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/compare/release-production-20250324-0935...release-production-20250506-0745)
+
+*Changes included:*
+🔧 chore: upgrade next
+✨ feat: New landing page GNN
+✨ feat: change base url LTI config generator
+✨ [MIL-10096](https://wartek.atlassian.net/browse/MIL-10096) Feat: redirect canvas-fe.guru-lms.belajar.id host to lms-lti.kemdikbud.go.id
+🐞 fix: remove redirection since it will affect signature validation
+🐞 fix: undefined config generator host
+✨ [MIL-10067](https://wartek.atlassian.net/browse/MIL-10067) Feat: diklat list landing page
+🐞 fix: pageSize 10 fetch diklat list
+🐞 Fix/diklat url
+
+Please reach out if you have any questions or concerns.
+Thank you! 🙏
 ---
 Please reach out if you have any questions or concerns.
 Thank you! 🚢💨
