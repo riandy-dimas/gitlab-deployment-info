@@ -50,13 +50,15 @@ export function getEmoji(commit) {
 
 // Function to find and link JIRA card IDs
 export function addJiraLinks(commit, markdown = true) {
-  // Regular expression to match JIRA card ID (e.g., MIL-10067)
-  const jiraRegex = /([A-Z]+-\d+)/g;
+  // Matches plain or bracketed JIRA IDs, e.g., MIL-12345 or [MIL-12345]
+  const jiraRegex = /(\[)?([A-Z]+-\d+)(\])?/g;
 
   // Replace any JIRA ticket ID with a clickable link
-  return commit.replace(jiraRegex, (match) => {
-    if (!markdown)
-      return `<a data-new-tab href="${BASE_JIRA_URL}/browse/${match}">${match}</a>`;
-    return `[${match}](${BASE_JIRA_URL}/browse/${match})`;
+  return commit.replace(jiraRegex, (_, __, id) => {
+    const url = `${BASE_JIRA_URL}/browse/${id}`;
+    if (!markdown) {
+      return `<a data-new-tab href="${url}">${id}</a>`;
+    }
+    return `[${id}](${url})`;
   });
 }

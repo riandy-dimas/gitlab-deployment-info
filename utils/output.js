@@ -18,27 +18,25 @@ export function getSlackMarkdown({
 }) {
   const [pipelineNumber, pipelineRef] = pipeline.value.split(" - ");
   const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${pipelineRef}`;
-  return `*🚀Production Release〘[${repo.name}](https://gitlab.com/${
+  return `*🚀  Production Release〘[${repo.name}](https://gitlab.com/${
     repo.namespace
   }/${repo.project})〙🚀*
 Hi everyone! We’ll be deploying to production with the following details:
----
-*⏰ Deployment Time*\n       ${new Date(dateTime.value).toLocaleString(
+
+>*⏰ Deployment Time*: ${new Date(dateTime.value).toLocaleString(
     "en-GB",
     DATE_OPTIONS
   )}
-*🏷️ Tag*\n       [${pipelineRef}](${refURL})
-*🔗 Pipeline*\n       [#${pipelineNumber}](${pipeline.getAttribute(
-    "data-value"
-  )})
-*🔍 Comparison*\n       [${fromTag.value} ⮕ ${
-    toTag.value
-  }](${compareUrl})\n*📝 Changes included:*\n${commits
-    .map((c) => `       ‣ ${getEmoji(c)} ${addJiraLinks(c)}`)
+>*🏷️ Tag*: [${pipelineRef}](${refURL})
+>*🔗 Pipeline*: [#${pipelineNumber}](${pipeline.getAttribute("data-value")})
+>*🔍 Comparison*: [${fromTag.value} ⮕ ${toTag.value}](${compareUrl})
+
+*Changes included:*\n${commits
+    .map((c) => `${getEmoji(c)} ${addJiraLinks(c)}`)
     .join("\n")}
----
+
 Please reach out if you have any questions or concerns.  
-Thank you! 🚢💨
+Thank you! 🙏
 `;
 }
 
