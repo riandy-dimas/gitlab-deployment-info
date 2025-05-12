@@ -41,11 +41,11 @@ export function setRoundedDatetimeLocal(
 export function getEmoji(commit) {
   if (/feat|add/i.test(commit)) return "✨";
   if (/fix/i.test(commit)) return "🐞";
-  if (/refactor|clean/i.test(commit)) return "♻️";
-  if (/docs/i.test(commit)) return "📝";
-  if (/test/i.test(commit)) return "🧩";
+  if (/refactor|clean/i.test(commit)) return "🧹";
+  if (/docs/i.test(commit)) return "🗒️";
+  if (/test/i.test(commit)) return "🧪";
   if (/chore/i.test(commit)) return "🔧";
-  return "❓";
+  return "🎯";
 }
 
 // Function to find and link JIRA card IDs
