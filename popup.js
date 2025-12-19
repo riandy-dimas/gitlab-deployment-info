@@ -2,7 +2,7 @@ import {
   fetchComparisons,
   fetchPipelines,
   fetchTags,
-  fetchCurrentRepoInfo,
+  fetchRepoDetails,
   getRepoSlug,
 } from "./utils/gitlab.js";
 import { setRoundedDatetimeLocal } from "./utils/format.js";
@@ -22,6 +22,9 @@ const dateOptions = {
   minute: "2-digit",
   hour12: false,
 };
+
+// Global variable to store repo info
+let currentRepo = null;
 
 function setLoading(loading = true) {
   if (loading) {
@@ -76,11 +79,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const [repo, tags, pipelines] = await Promise.all([
-        fetchCurrentRepoInfo(gitlabToken),
+      // Store repo info globally
+      currentRepo = repoSlug;
+
+      const [repoDetails, tags, pipelines] = await Promise.all([
+        fetchRepoDetails(repoSlug.namespace, repoSlug.project, gitlabToken),
         fetchTags(repoSlug.namespace, repoSlug.project, gitlabToken),
         fetchPipelines(repoSlug.namespace, repoSlug.project, gitlabToken),
       ]);
+
+      // Update currentRepo with the full details including name
+      currentRepo = repoDetails;
 
       setLoading(false);
 
@@ -197,15 +206,17 @@ document.addEventListener("DOMContentLoaded", async () => {
           const pipeline = document.getElementById("pipeline");
           const fromTag = document.getElementById("fromTag").value;
           const toTag = document.getElementById("toTag").value;
-          const compareUrl = `https://gitlab.com/${repo.namespace}/${repo.project}/-/compare/${fromTag}...${toTag}`;
+
+          // Use currentRepo instead of repo
+          const compareUrl = `https://gitlab.com/${currentRepo.namespace}/${currentRepo.project}/-/compare/${fromTag}...${toTag}`;
           const commits = await fetchComparisons(
-            repo.namespace,
-            repo.project,
+            currentRepo.namespace,
+            currentRepo.project,
             gitlabToken
           );
 
           const data = {
-            repo,
+            repo: currentRepo,
             commits,
             compareUrl,
             dateTime,
@@ -221,20 +232,20 @@ document.addEventListener("DOMContentLoaded", async () => {
           document.getElementById("output").innerHTML = htmlOuput;
 
           document
-            .getElementById("copyGitlab")
+            .getElementById("copyMD")
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(confluenceOutput);
               showToast(
-                `<strong>Gitlab info copied!</strong><br/>Paste in a new Gitlab release page or update existing one.`
+                `<strong>Markdown copied!</strong><br/>Paste in your release page or update existing one.`
               );
             });
 
           document
-            .getElementById("copySlack")
+            .getElementById("copyChanges")
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(slackOutput);
               showToast(
-                `<strong>Slack info copied!</strong><br />Paste in Slack message to format it.`
+                `<strong>Changelogs copied!</strong><br />Paste these changes in Slack.`
               );
             });
 

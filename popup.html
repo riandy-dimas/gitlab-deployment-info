@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html style="height: 100%">
   <head>
     <meta charset="UTF-8" />
     <title>Gitlab Deployment Information</title>
@@ -12,9 +12,12 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
   </head>
-  <body>
-    <main class="container" style="width: 300px; padding: 0">
-      <article style="margin: 0">
+  <body style="height: 100%">
+    <main
+      class="container"
+      style="width: 100%; padding: 0; height: 100%; overflow: hidden"
+    >
+      <article style="margin: 0; height: 100%">
         <h4 class="title" id="title">
           Deployment Information
           <div id="loader" style="display: none">
@@ -95,13 +98,13 @@
         </form>
         <div id="output" style="margin-top: 10px; margin-bottom: 10px"></div>
         <div id="copyButton">
-          <button class="btn" id="copyGitlab">
-            <i class="fa-brands fa-gitlab"></i>
-            Gitlab
+          <button class="btn" id="copyMD">
+            <i class="fa-brands fa-markdown"></i>
+            Copy Markdown
           </button>
-          <button class="btn" id="copySlack">
-            <i class="fa-brands fa-slack"></i>
-            Slack
+          <button class="btn" id="copyChanges">
+            <i class="fa-solid fa-code-compare"></i>
+            Copy Changelogs
           </button>
         </div>
       </article>

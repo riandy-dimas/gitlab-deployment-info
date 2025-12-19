@@ -1,6 +1,30 @@
 export async function getRepoSlug() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const url = new URL(tab.url);
+  let tabUrl;
+
+  try {
+    // First, try to get from storage (for standalone window)
+    const { currentTabUrl } = await chrome.storage.local.get("currentTabUrl");
+
+    if (currentTabUrl) {
+      tabUrl = currentTabUrl;
+    } else {
+      // Fallback: try to get the active tab (for popup mode)
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (tab?.url) {
+        tabUrl = tab.url;
+      } else {
+        return null;
+      }
+    }
+  } catch (error) {
+    console.error("Error getting tab URL:", error);
+    return null;
+  }
+
+  const url = new URL(tabUrl);
 
   if (url.hostname !== "gitlab.com") return null;
 
@@ -119,4 +143,26 @@ export async function fetchComparisons(namespace, project, token) {
   return comparisons.commits
     .filter((commit) => !commit.title.startsWith("Merge branch"))
     .map((commit) => commit.title);
+}
+
+export async function fetchRepoDetails(namespace, project, token) {
+  const encodedPath = encodeURIComponent(`${namespace}/${project}`);
+  const url = `https://gitlab.com/api/v4/projects/${encodedPath}`;
+
+  const headers = {};
+  if (token) {
+    headers["PRIVATE-TOKEN"] = token;
+  }
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch repo details: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return {
+    namespace: data.namespace.full_path,
+    project: data.path,
+    name: data.name,
+  };
 }

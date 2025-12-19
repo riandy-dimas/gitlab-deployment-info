@@ -6,9 +6,11 @@
   "permissions": ["tabs", "scripting", "storage", "clipboardWrite"],
   "host_permissions": ["https://gitlab.com/*"],
   "action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "icon.png"
     }
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }

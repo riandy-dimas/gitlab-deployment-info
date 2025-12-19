@@ -21,8 +21,13 @@ export function getGitlabInfo({
   compareUrl,
   dateTime,
 }) {
-  const [pipelineNumber, pipelineRef] = pipeline.value.split(" - ");
-  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${pipelineRef}`;
+  const fromTag = document.getElementById("fromTag");
+  const toTag = document.getElementById("toTag");
+  const pipelineValue = pipeline.value || pipeline.getAttribute("value") || "";
+  const pipelineUrl = pipeline.getAttribute("data-value") || "";
+  const [pipelineNumber] = pipelineValue.split(" - ");
+  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${toTag.value}`;
+
   return `
 ### **💡 Deployment Summary**
 | Information | Details |
@@ -34,10 +39,8 @@ export function getGitlabInfo({
     "en-GB",
     DATE_OPTIONS
   )} |
-| 🏷️ **Tag** | [${pipelineRef}](${refURL}) |
-| 🔗 **Pipeline** | [#${pipelineNumber}](${pipeline.getAttribute(
-    "data-value"
-  )}) |
+| 🏷️ **Tag** | [${toTag.value}](${refURL}) |
+| 🔗 **Pipeline** | [#${pipelineNumber}](${pipelineUrl}) |
 | 🔍 **Comparison** | [${fromTag.value} ⮕ ${toTag.value}](${compareUrl}) |
 
 ### **📝 Change Logs**:
@@ -52,10 +55,14 @@ export function getHTMLOutput({
   compareUrl,
   dateTime,
 }) {
-  const [pipelineNumber, pipelineRef] = pipeline.value.split(" - ");
-  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${pipelineRef}`;
+  const toTag = document.getElementById("toTag");
+  const pipelineValue = pipeline.value || pipeline.getAttribute("value") || "";
+  const pipelineUrl = pipeline.getAttribute("data-value") || "";
+  const [pipelineNumber] = pipelineValue.split(" - ");
+  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${toTag}`;
+
   return `
-<ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 80px; overflow: auto">
+<ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 140px; overflow: auto">
   <li>Project: <a data-new-tab href="${`https://gitlab.com/${repo.namespace}/${repo.project}`}">${
     repo.name
   }</a></li>
@@ -63,10 +70,8 @@ export function getHTMLOutput({
     "en-GB",
     DATE_OPTIONS
   )}</li>
-  <li>Pipeline: <a data-new-tab href="${pipeline.getAttribute(
-    "data-value"
-  )}" >#${pipelineNumber}</a></li>
-  <li>Tag: <a data-new-tab href="${refURL}" >${pipelineRef}</a></li>
+  <li>Pipeline: <a data-new-tab href="${pipelineUrl}" >${pipelineNumber}</a></li>
+  <li>Tag: <a data-new-tab href="${refURL}" >${toTag.value}</a></li>
   <li>Comparison: <a data-new-tab href="${compareUrl}" >View comparison</a></li>
   <li>Changes: <ul style="margin: 0; padding-left: 10px;">${commits
     .map((commit) => `<li>${addJiraLinks(commit, false)}</li>`)
