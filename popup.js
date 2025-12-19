@@ -7,9 +7,9 @@ import {
 } from "./utils/gitlab.js";
 import { setRoundedDatetimeLocal } from "./utils/format.js";
 import {
-  getConfluenceMarkdown,
+  getGitlabInfo,
   getHTMLOutput,
-  getSlackMarkdown,
+  getSlackChangelogs,
 } from "./utils/output.js";
 import { showToast } from "./utils/toast.js";
 import { makeLinksOpenInTab } from "./utils/open-link.js";
@@ -142,8 +142,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             pipeline,
           };
 
-          const slackOutput = getSlackMarkdown(data);
-          const confluenceOutput = getConfluenceMarkdown(data);
+          const slackOutput = getSlackChangelogs(data);
+          const confluenceOutput = getGitlabInfo(data);
           const htmlOuput = getHTMLOutput(data);
 
           document.getElementById("copyButton").style = "display: flex;";
@@ -151,11 +151,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           document.getElementById("output").innerHTML = htmlOuput;
 
           document
-            .getElementById("copyConfluence")
+            .getElementById("copyGitlab")
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(confluenceOutput);
               showToast(
-                `<strong>Confluence Markdown copied!</strong><br/>Paste in a new Confluence page or update existing one.`
+                `<strong>Gitlab info copied!</strong><br/>Paste in a new Gitlab release page or update existing one.`
               );
             });
 
@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(slackOutput);
               showToast(
-                `<strong>Slack Markdown copied!</strong><br />Paste in Slack message and use <code>cmd + shift + f</code> to format it.`
+                `<strong>Slack info copied!</strong><br />Paste in Slack message to format it.`
               );
             });
 

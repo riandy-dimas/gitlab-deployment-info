@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="popup.css" />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=manufacturing,markdown_copy,progress_activity"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
   </head>
   <body>
@@ -18,12 +18,7 @@
         <h4 class="title" id="title">
           Deployment Information
           <div id="loader" style="display: none">
-            <span
-              class="material-symbols-outlined rotating"
-              style="font-size: 1rem"
-            >
-              progress_activity
-            </span>
+            <i class="fa-solid fa-spinner rotating"></i>
           </div>
         </h4>
         <details id="gitlabToken" name="gitlab-token">
@@ -76,18 +71,18 @@
             required
           /><br />
           <button id="generateBtn" class="btn" type="submit">
-            <span class="material-symbols-outlined"> manufacturing </span>
+            <i class="fa-solid fa-gear"></i>
             Generate Info
           </button>
         </form>
         <div id="output" style="margin-top: 12px"></div>
         <div id="copyButton">
-          <button class="btn" id="copyConfluence">
-            <span class="material-symbols-outlined"> markdown_copy </span>
-            Confluence
+          <button class="btn" id="copyGitlab">
+            <i class="fa-brands fa-gitlab"></i>
+            Gitlab
           </button>
           <button class="btn" id="copySlack">
-            <span class="material-symbols-outlined"> markdown_copy </span>
+            <i class="fa-brands fa-slack"></i>
             Slack
           </button>
         </div>
