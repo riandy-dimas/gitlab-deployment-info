@@ -84,6 +84,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       setLoading(false);
 
+      // Filter tags containing "release-production"
+      const releaseProductionTags = tags.filter((tag) =>
+        tag.toLowerCase().includes("release-production")
+      );
+
+      // Filter pipelines containing "release-production"
+      const releaseProductionPipelines = pipelines.filter((pipeline) => {
+        const label = typeof pipeline === "string" ? pipeline : pipeline.label;
+        return label.toLowerCase().includes("release-production");
+      });
+
       // Initialize Awesomplete instances and store references
       const fromTagInput = document.getElementById("fromTag");
       const fromTagAwesomplete = new Awesomplete(fromTagInput, {
@@ -115,6 +126,28 @@ document.addEventListener("DOMContentLoaded", async () => {
           this.input.setAttribute("data-value", suggestion.value);
         },
       });
+
+      // Set initial values
+      if (releaseProductionTags.length > 0) {
+        // toTag: first latest (index 0)
+        toTagInput.value = releaseProductionTags[0];
+      }
+
+      if (releaseProductionTags.length > 1) {
+        // fromTag: second latest (index 1)
+        fromTagInput.value = releaseProductionTags[1];
+      }
+
+      if (releaseProductionPipelines.length > 0) {
+        // pipeline: latest
+        const latestPipeline = releaseProductionPipelines[0];
+        if (typeof latestPipeline === "string") {
+          pipelineInput.value = latestPipeline;
+        } else {
+          pipelineInput.value = latestPipeline.label;
+          pipelineInput.setAttribute("data-value", latestPipeline.value);
+        }
+      }
 
       // Add click/focus event listeners to open dropdown immediately
       fromTagInput.addEventListener("click", () => {
