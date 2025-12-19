@@ -84,10 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       setLoading(false);
 
-      // Filter tags containing "release-production"
-      const releaseProductionTags = tags.filter((tag) =>
-        tag.toLowerCase().includes("release-production")
-      );
+      const releaseProductionTags = tags;
 
       // Filter pipelines containing "release-production"
       const releaseProductionPipelines = pipelines.filter((pipeline) => {
@@ -103,6 +100,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         minChars: 0,
         maxItems: 10,
         autoFirst: true,
+        filter: function (text, input) {
+          return true; // Show all items
+        },
       });
 
       const toTagInput = document.getElementById("toTag");
@@ -112,6 +112,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         minChars: 0,
         maxItems: 10,
         autoFirst: true,
+        filter: function (text, input) {
+          return true; // Show all items
+        },
       });
 
       const pipelineInput = document.getElementById("pipeline");
@@ -121,6 +124,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         minChars: 0,
         maxItems: 10,
         autoFirst: true,
+        filter: function (text, input) {
+          return true; // Show all items
+        },
         replace: function (suggestion) {
           this.input.value = suggestion.label;
           this.input.setAttribute("data-value", suggestion.value);
@@ -151,39 +157,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Add click/focus event listeners to open dropdown immediately
       fromTagInput.addEventListener("click", () => {
-        if (fromTagInput.value === "") {
-          fromTagAwesomplete.evaluate();
-        }
+        fromTagAwesomplete.evaluate();
       });
 
       fromTagInput.addEventListener("focus", () => {
-        if (fromTagInput.value === "") {
-          fromTagAwesomplete.evaluate();
-        }
+        fromTagAwesomplete.evaluate();
       });
 
       toTagInput.addEventListener("click", () => {
-        if (toTagInput.value === "") {
-          toTagAwesomplete.evaluate();
-        }
+        toTagAwesomplete.evaluate();
       });
 
       toTagInput.addEventListener("focus", () => {
-        if (toTagInput.value === "") {
-          toTagAwesomplete.evaluate();
-        }
+        toTagAwesomplete.evaluate();
       });
 
       pipelineInput.addEventListener("click", () => {
-        if (pipelineInput.value === "") {
-          pipelineAwesomplete.evaluate();
-        }
+        pipelineAwesomplete.evaluate();
       });
 
       pipelineInput.addEventListener("focus", () => {
-        if (pipelineInput.value === "") {
-          pipelineAwesomplete.evaluate();
-        }
+        pipelineAwesomplete.evaluate();
       });
 
       setRoundedDatetimeLocal(document.getElementById("dateTime"));

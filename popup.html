@@ -53,29 +53,47 @@
           />
           <small id="date-time-helper">Deployment Time</small>
           <br />
-          <input placeholder="Pipeline" type="text" id="pipeline" required />
-          <br />
-          <input
-            placeholder="Source Tag"
-            class="awesomplete"
-            type="text"
-            id="fromTag"
-            required
-          />
-          <br />
-          <input
-            placeholder="Target Tag"
-            class="awesomplete"
-            type="text"
-            id="toTag"
-            required
-          /><br />
+          <fieldset style="margin-bottom: 0">
+            <label>
+              Pipeline ID
+              <input
+                placeholder="Pipeline"
+                type="text"
+                id="pipeline"
+                required
+              />
+            </label>
+          </fieldset>
+          <fieldset style="margin-bottom: 0">
+            <label>
+              Source Tag
+              <input
+                placeholder="Source Tag"
+                class="awesomplete"
+                type="text"
+                id="fromTag"
+                required
+              />
+            </label>
+          </fieldset>
+          <fieldset style="margin-bottom: 0">
+            <label>
+              Target Tag
+              <input
+                placeholder="Target Tag"
+                class="awesomplete"
+                type="text"
+                id="toTag"
+                required
+              />
+            </label>
+          </fieldset>
           <button id="generateBtn" class="btn" type="submit">
             <i class="fa-solid fa-gear"></i>
             Generate Info
           </button>
         </form>
-        <div id="output" style="margin-top: 12px"></div>
+        <div id="output" style="margin-top: 10px; margin-bottom: 10px"></div>
         <div id="copyButton">
           <button class="btn" id="copyGitlab">
             <i class="fa-brands fa-gitlab"></i>

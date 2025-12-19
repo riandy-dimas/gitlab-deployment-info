@@ -81,7 +81,7 @@ export async function fetchPipelines(namespace, project, token) {
   const encodedPath = encodeURIComponent(`${namespace}/${project}`);
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const response = await fetch(
-    `https://gitlab.com/api/v4/projects/${encodedPath}/pipelines`,
+    `https://gitlab.com/api/v4/projects/${encodedPath}/pipelines?scope=tags`,
     {
       headers,
     }
@@ -90,7 +90,7 @@ export async function fetchPipelines(namespace, project, token) {
   if (!response.ok) throw new Error("Failed to fetch pipelines");
   const pipelines = await response.json();
   return pipelines.map((pipeline) => ({
-    label: `${pipeline.id} - ${pipeline.ref}`,
+    label: `#${pipeline.id} (${pipeline.ref})`,
     value: pipeline.web_url,
     ref: pipeline.ref,
   }));
