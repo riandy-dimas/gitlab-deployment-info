@@ -59,7 +59,7 @@ export function getHTMLOutput({
   const pipelineValue = pipeline.value || pipeline.getAttribute("value") || "";
   const pipelineUrl = pipeline.getAttribute("data-value") || "";
   const [pipelineNumber] = pipelineValue.split(" - ");
-  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${toTag}`;
+  const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${toTag.value}`;
 
   return `
 <ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 140px; overflow: auto">
