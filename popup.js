@@ -239,7 +239,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(confluenceOutput);
               showToast(
-                `<strong>Gitlab info copied!</strong><br/>You can paste it in the release page.`
+                `<strong>Markdown copied!</strong><br/>You can paste it in the release page.`, "success"
               );
             });
 
@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(slackOutput);
               showToast(
-                `<strong>Slack info copied!</strong><br />You can paste the changes in Slack now.`
+                `<strong>Changelogs copied!</strong><br />You can paste the changes elsewhere now.`, 'success'
               );
             });
           
@@ -262,7 +262,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const releaseTab = tabs.find(tab => tab.url && tab.url.includes('/releases/new'));
                 
                 if (!releaseTab) {
-                  showToast('<strong>Error:</strong> Release page not found. Please open the <strong>New release</strong> page first.');
+                  showToast('<strong>Error:</strong> Release page not found. Please open the <strong>New release</strong> page first.', 'error');
                   return;
                 }
                 
@@ -288,17 +288,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                   });
                   
                   if (response && response.success) {
-                    showToast('<strong>Success!</strong> Release notes filled successfully.');
+                    showToast('<strong>Success!</strong> Release notes filled successfully.', 'success');
                   } else {
-                    showToast(`<strong>Error:</strong> ${response?.error || 'Unknown error'}`);
+                    showToast(`<strong>Error:</strong> ${response?.error || 'Unknown error'}`, 'error');
                   }
                 } catch (msgError) {
                   console.error('Message error:', msgError);
-                  showToast('<strong>Error:</strong> Could not communicate with the page. Try refreshing the release page.');
+                  showToast('<strong>Error:</strong> Could not communicate with the page. Try refreshing the release page.', 'error');
                 }
               } catch (error) {
                 console.error('Error filling release notes:', error);
-                showToast('<strong>Error:</strong> Could not fill release notes. Make sure the release page is open.');
+                showToast('<strong>Error:</strong> Could not fill release notes. Make sure the release page is open.', 'error');
               }
             });
           }

@@ -1,8 +1,14 @@
-export function showToast(message) {
+export function showToast(message, type = "info") {
+  const bgColors = {
+    info: "#E8E2D2",
+    success: "#D7FBC1",
+    warning: "#FCDCC1",
+    error: "#F38F79",
+  };
   Toastify({
     text: message,
     className: "toast",
-    duration: 3000,
+    duration: 4000,
     gravity: "top",
     position: "center",
     stopOnFocus: true,
@@ -10,5 +16,10 @@ export function showToast(message) {
     offset: {
       y: -14,
     },
+    style: {
+      background: bgColors[type] || bgColors.info,
+      maxWidth: "none",
+      width: "100vw"
+    }
   }).showToast();
 }
