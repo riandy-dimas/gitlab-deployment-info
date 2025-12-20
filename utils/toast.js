@@ -4,7 +4,7 @@ export function showToast(message) {
     className: "toast",
     duration: 3000,
     gravity: "top",
-    position: "left",
+    position: "center",
     stopOnFocus: true,
     escapeMarkup: false,
     offset: {
