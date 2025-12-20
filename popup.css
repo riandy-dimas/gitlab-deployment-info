@@ -79,6 +79,10 @@ form > small {
   display: none;
   gap: 8px;
 }
+
+#fillReleaseBtn {
+  grid-column: 1 / -1;
+}
 .toast {
   background: var(--pico-tooltip-background-color);
   color: var(--pico-tooltip-color);

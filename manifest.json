@@ -12,5 +12,11 @@
   },
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://gitlab.com/*/*/releases/new", "https://gitlab.com/*/*/*/releases/new"],
+      "js": ["content.js"]
+    }
+  ]
 }

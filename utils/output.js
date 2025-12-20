@@ -62,7 +62,7 @@ export function getHTMLOutput({
   const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${toTag.value}`;
 
   return `
-<ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 140px; overflow: auto">
+<ul style="margin: 0; padding: 0; padding-left: 10px; max-height: 96px; overflow: auto">
   <li>Project: <a data-new-tab href="${`https://gitlab.com/${repo.namespace}/${repo.project}`}">${
     repo.name
   }</a></li>

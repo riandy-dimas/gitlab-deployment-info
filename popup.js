@@ -25,6 +25,7 @@ const dateOptions = {
 
 // Global variable to store repo info
 let currentRepo = null;
+let confluenceOutputGlobal = null;
 
 function setLoading(loading = true) {
   if (loading) {
@@ -64,6 +65,7 @@ document.getElementById("revealPassword").addEventListener("click", () => {
 // Load token when popup opens
 document.addEventListener("DOMContentLoaded", async () => {
   const tokenInput = document.getElementById("tokenInput");
+
   chrome.storage.local.get("gitlabToken", async ({ gitlabToken }) => {
     if (gitlabToken) tokenInput.value = gitlabToken;
 
@@ -79,16 +81,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // Store repo info globally
-      currentRepo = repoSlug;
-
+      // Fetch full repo details including name, tags, and pipelines
       const [repoDetails, tags, pipelines] = await Promise.all([
         fetchRepoDetails(repoSlug.namespace, repoSlug.project, gitlabToken),
         fetchTags(repoSlug.namespace, repoSlug.project, gitlabToken),
         fetchPipelines(repoSlug.namespace, repoSlug.project, gitlabToken),
       ]);
 
-      // Update currentRepo with the full details including name
+      // Store full repo info globally
       currentRepo = repoDetails;
 
       setLoading(false);
@@ -206,7 +206,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const pipeline = document.getElementById("pipeline");
           const fromTag = document.getElementById("fromTag").value;
           const toTag = document.getElementById("toTag").value;
-
+          
           // Use currentRepo instead of repo
           const compareUrl = `https://gitlab.com/${currentRepo.namespace}/${currentRepo.project}/-/compare/${fromTag}...${toTag}`;
           const commits = await fetchComparisons(
@@ -226,8 +226,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           const slackOutput = getSlackChangelogs(data);
           const confluenceOutput = getGitlabInfo(data);
           const htmlOuput = getHTMLOutput(data);
+          
+          // Store confluenceOutput globally
+          confluenceOutputGlobal = confluenceOutput;
 
-          document.getElementById("copyButton").style = "display: flex;";
+          document.getElementById("copyButton").style = "display: grid; grid-template-columns: 1fr 1fr; gap: 8px;";
 
           document.getElementById("output").innerHTML = htmlOuput;
 
@@ -236,7 +239,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(confluenceOutput);
               showToast(
-                `<strong>Markdown copied!</strong><br/>Paste in your release page or update existing one.`
+                `<strong>Gitlab info copied!</strong><br/>You can paste it in the release page.`
               );
             });
 
@@ -245,9 +248,60 @@ document.addEventListener("DOMContentLoaded", async () => {
             .addEventListener("click", async () => {
               await navigator.clipboard.writeText(slackOutput);
               showToast(
-                `<strong>Changelogs copied!</strong><br />Paste these changes in Slack.`
+                `<strong>Slack info copied!</strong><br />You can paste the changes in Slack now.`
               );
             });
+          
+          // Add fill release button handler
+          const fillReleaseBtn = document.getElementById("fillReleaseBtn");
+          if (fillReleaseBtn) {
+            fillReleaseBtn.addEventListener("click", async () => {
+              try {
+                // Always get the current active tab instead of using stored URL
+                const tabs = await chrome.tabs.query({});
+                const releaseTab = tabs.find(tab => tab.url && tab.url.includes('/releases/new'));
+                
+                if (!releaseTab) {
+                  showToast('<strong>Error:</strong> Release page not found. Please open the <strong>New release</strong> page first.');
+                  return;
+                }
+                
+                // Inject content script if not already injected
+                try {
+                  await chrome.scripting.executeScript({
+                    target: { tabId: releaseTab.id },
+                    files: ['content.js']
+                  });
+                } catch (e) {
+                  // Script might already be injected, continue
+                  console.log('Content script already injected or error:', e);
+                }
+                
+                // Wait a bit for script to be ready
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Send message to content script
+                try {
+                  const response = await chrome.tabs.sendMessage(releaseTab.id, {
+                    action: "fillReleaseNotes",
+                    content: confluenceOutputGlobal
+                  });
+                  
+                  if (response && response.success) {
+                    showToast('<strong>Success!</strong> Release notes filled successfully.');
+                  } else {
+                    showToast(`<strong>Error:</strong> ${response?.error || 'Unknown error'}`);
+                  }
+                } catch (msgError) {
+                  console.error('Message error:', msgError);
+                  showToast('<strong>Error:</strong> Could not communicate with the page. Try refreshing the release page.');
+                }
+              } catch (error) {
+                console.error('Error filling release notes:', error);
+                showToast('<strong>Error:</strong> Could not fill release notes. Make sure the release page is open.');
+              }
+            });
+          }
 
           makeLinksOpenInTab();
           setLoading(false);
