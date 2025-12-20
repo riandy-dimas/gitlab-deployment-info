@@ -1,6 +1,6 @@
 # gitlab-deployment-info 🧩
 
-A simple Chrome extension to generate deployment documentation in markdown format — ready to copy-paste to **Confluence** or **Slack**.
+A simple Chrome extension to generate deployment documentation in markdown format — ready to copy-paste to **Gitlab Release Page**, **Confluence** or **Slack**.
 
 Pick a deployment date and time, select the pipeline and tag range, and get a well-formatted summary including clickable links to GitLab pipelines, comparisons, and JIRA issues.
 
@@ -10,10 +10,11 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 
 ## ✨ Features
 
-- 📝 Automatically generates Confluence and Slack-friendly deployment notes
+- 📝 Automatically generates Gitlab Release Page, Confluence and Slack-friendly deployment notes
 - 🔗 Includes pipeline and tag comparison links from GitLab
 - 🧠 Automatically appends links to JIRA issues mentioned in the changelog
 - 🧩 Works as a Chrome extension on GitLab repository pages
+- 💡 Autofill release notes in Gitlab New Release page
 
 ---
 
@@ -24,7 +25,7 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 3. Open `chrome://extensions` in your browser
 4. Enable **Developer mode** (top right corner)
 5. Click **Load unpacked**
-6. Select the folder where the extension was downloaded
+6. Select the folder where this extension was downloaded
 
 ---
 
@@ -34,11 +35,12 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 2. Click the extension icon
 3. (Optional) Pin it to your toolbar for quick access
 4. Fill in the required details (tags, pipeline, date)
-5. Copy the generated markdown for Confluence or Slack
+5. Copy the generated markdown for Gitlab Release Page, Confluence or Slack
+6. You can also click the fill release notes automatically when you are in **Gitlab New Release Page**
 
 ---
 
-## 📄 Confluence Output Example
+## 📄 Markdown Output Example
 
 ```
 
@@ -65,18 +67,9 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 
 ---
 
-## 💬 Slack Output Example
+## 💬 Changes Output Example
 
 ```
-*🚀  Production Release〘[Canvas LTI](https://gitlab.com/wartek-id/guru/belajar/canvas-lti)〙🚀*
-Hi everyone! We’ll be deploying to production with the following details:
-
->*⏰ Deployment Time*: 12 May 2025, 07:30
->*🏷️ Tag*: [release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/tags/release-production-20250506-0745)
->*🔗 Pipeline*: [#1801689260](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/pipelines/1801689260)
->*🔍 Comparison*: [release-production-20250324-0935 ⮕ release-production-20250506-0745](https://gitlab.com/wartek-id/guru/belajar/canvas-lti/-/compare/release-production-20250324-0935...release-production-20250506-0745)
-
-*Changes included:*
 🔧 chore: upgrade next
 ✨ feat: New landing page GNN
 ✨ feat: change base url LTI config generator
@@ -86,15 +79,7 @@ Hi everyone! We’ll be deploying to production with the following details:
 ✨ [MIL-10067](https://wartek.atlassian.net/browse/MIL-10067) Feat: diklat list landing page
 🐞 fix: pageSize 10 fetch diklat list
 🐞 Fix/diklat url
-
-Please reach out if you have any questions or concerns.
-Thank you! 🙏
----
-Please reach out if you have any questions or concerns.
-Thank you! 🚢💨
 ```
-
-> 💡 **Tip for Slack:** After pasting the generated text into a Slack message box, select all the text and press `Cmd + Shift + F` (on Mac) to apply block formatting automatically.
 
 ---
 
