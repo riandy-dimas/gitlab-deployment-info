@@ -4,7 +4,7 @@ A simple Chrome extension to generate deployment documentation in markdown forma
 
 Pick a deployment date and time, select the pipeline and tag range, and get a well-formatted summary including clickable links to GitLab pipelines, comparisons, and JIRA issues.
 
-![preview-gitlab-deployment-info](https://github.com/user-attachments/assets/1c8e030c-56f0-4f2a-b034-5f3b5df44ab2)
+https://github.com/user-attachments/assets/13439d51-86cb-4a7e-b208-45fcf42d3dc2
 
 ---
 
@@ -20,6 +20,8 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 
 ## 🔧 Installation
 
+https://github.com/user-attachments/assets/b71665e7-aae3-4768-b110-576cbb021530
+
 1. **Clone or download** this repository
 2. **Edit the `BASE_JIRA_URL`** in `format.js` if needed (default: `https://wartek.atlassian.net`)
 3. Open `chrome://extensions` in your browser
@@ -31,7 +33,7 @@ Pick a deployment date and time, select the pipeline and tag range, and get a we
 
 ## 🚀 Usage
 
-1. Open any GitLab repository page
+1. Open any GitLab repository page / Gitlab New Release page
 2. Click the extension icon
 3. (Optional) Pin it to your toolbar for quick access
 4. Fill in the required details (tags, pipeline, date)
