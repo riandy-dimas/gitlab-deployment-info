@@ -4,7 +4,7 @@ A simple Chrome extension to generate deployment documentation in markdown forma
 
 Pick a deployment date and time, select the pipeline and tag range, and get a well-formatted summary including clickable links to GitLab pipelines, comparisons, and JIRA issues.
 
-https://github.com/user-attachments/assets/13439d51-86cb-4a7e-b208-45fcf42d3dc2
+https://github.com/user-attachments/assets/659b1d51-dd6b-46fe-9345-7970e2873f1d
 
 ---
 
@@ -43,6 +43,8 @@ https://github.com/user-attachments/assets/b71665e7-aae3-4768-b110-576cbb021530
 6. You can also click the fill release notes automatically when you are in **Gitlab New Release Page**
 
 ### 🪄 Using AI Summary
+
+https://github.com/user-attachments/assets/a2a7ef98-8770-490e-8553-be9578ea671e
 
 After generating your deployment information, you can use the **AI Summary** button to get an intelligent summary of all the changes:
 
