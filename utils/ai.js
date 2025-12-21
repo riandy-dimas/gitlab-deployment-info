@@ -90,28 +90,61 @@ function chunkCommits(commits, chunkSize = 15) {
   return chunks;
 }
 
-// Show confirmation dialog for model download
-function showDownloadConfirmation(status) {
-  let message = '';
-  
+// Get download confirmation dialog content
+export function getDownloadConfirmationContent(status) {
   if (status === 'before-download') {
-    message = 'The AI Summarization model needs to be downloaded before use.\n\n' +
-              'This is a one-time download that may take several minutes depending on your connection.\n' +
-              'The download will happen in the background.\n\n' +
-              'You can monitor progress at: chrome://components/\n\n' +
-              'Do you want to start the download and continue?';
+    return {
+      title: 'AI Model - First Time Setup',
+      content: `
+        <p><strong>🧠 The Gemini Nano AI model needs to be downloaded to your device.</strong></p>
+        
+        <div style="background: var(--pico-card-background-color); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+          <p style="margin: 0.5rem 0;"><strong>📦 Download Size:</strong> ~4GB</p>
+          <p style="margin: 0.5rem 0;"><strong>⏱️ Estimated Time:</strong> 10-30 minutes</p>
+          <p style="margin: 0.5rem 0;"><strong>🔒 Privacy:</strong> Runs completely offline on your device</p>
+          <p style="margin: 0.5rem 0;"><strong>💾 One-time setup:</strong> Model will be reused for all future summaries</p>
+        </div>
+        
+        <p><strong>During the download you can:</strong></p>
+        <ul>
+          <li>Continue using Chrome normally</li>
+          <li>Monitor progress at: <code>chrome://on-device-internals/</code></li>
+          <li>Close this extension and come back later</li>
+        </ul>
+        
+        <p style="margin-top: 1rem;"><strong>Would you like to start downloading the AI model now?</strong></p>
+      `,
+      confirmText: 'Start Download',
+      type: 'before-download'
+    };
   } else if (status === 'after-download') {
-    message = 'The AI model is currently downloading in the background.\n\n' +
-              'Please wait a few minutes for the download to complete.\n' +
-              'You can check the download progress at: chrome://components/\n\n' +
-              'Do you want to try anyway? (This may fail if download is not complete)';
+    return {
+      title: 'AI Model Download In Progress',
+      content: `
+        <p><strong>⏳ The Gemini Nano AI model is currently being downloaded in the background.</strong></p>
+        
+        <p>Please wait a few more minutes for the download to complete.</p>
+        
+        <div style="background: var(--pico-card-background-color); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+          <p style="margin: 0.5rem 0;"><strong>📊 Check progress at:</strong></p>
+          <p style="margin: 0.5rem 0; padding-left: 1rem;"><code>chrome://on-device-internals/</code></p>
+          <p style="margin: 0.5rem 0; padding-left: 1rem;"><small>(Look for "Foundational Model" status)</small></p>
+        </div>
+        
+        <p><strong>Do you want to try anyway?</strong></p>
+        <p><small>(This may fail if the download is not complete)</small></p>
+      `,
+      confirmText: 'Try Anyway',
+      type: 'after-download'
+    };
   }
   
-  return confirm(message);
+  return null;
 }
 
 // Summarize using Chrome's Summarizer API
-export async function summarizeCommits(commits) {
+// Returns: { needsConfirmation: boolean, confirmationStatus?: string, result?: string }
+export async function summarizeCommits(commits, userConfirmed = false) {
   if (!commits || commits.length === 0) {
     throw new Error('No commits to summarize');
   }
@@ -121,21 +154,22 @@ export async function summarizeCommits(commits) {
   console.log('Summarizer status:', summarizerStatus);
   
   if (!summarizerStatus.available) {
-    // Show confirmation dialog for download scenarios
+    // Check if we need user confirmation for download
     if (summarizerStatus.status === 'after-download' || summarizerStatus.status === 'before-download') {
-      const userConfirmed = showDownloadConfirmation(summarizerStatus.status);
-      
       if (!userConfirmed) {
-        throw new Error('AI summarization cancelled by user');
+        // Return indication that confirmation is needed
+        return {
+          needsConfirmation: true,
+          confirmationStatus: summarizerStatus.status
+        };
       }
       
-      // If user confirmed but model is still downloading, inform them
+      // User has confirmed, but if model is still downloading, inform them
       if (summarizerStatus.status === 'after-download') {
-        throw new Error('AI model is still downloading. Please wait a few minutes and try again. Check progress at chrome://components/');
+        throw new Error('AI model is still downloading. Please wait a few minutes and try again. Check progress at chrome://on-device-internals/');
       }
       
-      // For 'before-download', we'll proceed and let the API start the download
-      // The createSummarizer() call will trigger the download
+      // For 'before-download', proceed - createSummarizer() will trigger the download
     } else {
       throw new Error(`Summarizer API not available: ${summarizerStatus.reason}`);
     }
@@ -172,10 +206,17 @@ export async function summarizeCommits(commits) {
         const combinedSummary = summaries.join(' ');
         
         console.log('Summarizing combined summaries...');
-        return await summarizer.summarize(combinedSummary, { context: 'These are summarized deployment changes from multiple commit summaries. Provide a concise overall summary.' });
-
+        const finalSummary = await summarizer.summarize(combinedSummary, { context: 'These are summarized deployment changes from multiple commit summaries. Provide a concise overall summary.' });
+        
+        return {
+          needsConfirmation: false,
+          result: finalSummary
+        };
       } else {
-        return summaries[0];
+        return {
+          needsConfirmation: false,
+          result: summaries[0]
+        };
       }
     }
     
@@ -192,7 +233,10 @@ export async function summarizeCommits(commits) {
     // Keep the instance alive, don't destroy it
     console.log('Summary generated successfully, keeping instance alive');
     
-    return summary;
+    return {
+      needsConfirmation: false,
+      result: summary
+    };
   } catch (error) {
     console.error('Summarization error:', error);
     
@@ -223,36 +267,44 @@ export function cleanupSummarizer() {
   }
 }
 
+// Check if AI is available and whether button should be enabled
 export async function checkAIAvailability() {
   const summarizerStatus = await isSummarizerAvailable();
   
   if (summarizerStatus.available) {
     return {
       available: true,
-      method: 'Chrome Summarizer API',
+      buttonEnabled: true,
+      method: 'Chrome Summarizer API (Gemini Nano)',
       status: 'ready'
+    };
+  }
+  
+  // If the API is supported but model needs download or is downloading,
+  // we should enable the button so users can start the download
+  if (summarizerStatus.status === 'before-download') {
+    return {
+      available: false,
+      buttonEnabled: true, // Enable button to allow download
+      method: 'Chrome Summarizer API (Gemini Nano)',
+      status: 'Click to download AI model (~4GB)'
     };
   }
   
   if (summarizerStatus.status === 'after-download') {
     return {
       available: false,
-      method: 'Chrome Summarizer API',
-      status: 'Model is downloading. Please wait...'
+      buttonEnabled: true, // Enable button but will show warning
+      method: 'Chrome Summarizer API (Gemini Nano)',
+      status: 'Model downloading... Please wait'
     };
   }
   
-  if (summarizerStatus.status === 'before-download') {
-    return {
-      available: false,
-      method: 'Chrome Summarizer API',
-      status: 'Model needs to be downloaded. Click AI Summary to start.'
-    };
-  }
-  
+  // API not supported at all - disable button
   return {
     available: false,
-    method: 'Chrome Summarizer API',
-    status: `Not available: ${summarizerStatus.reason}`
+    buttonEnabled: false,
+    method: 'Chrome Summarizer API (Gemini Nano)',
+    status: `Not supported: ${summarizerStatus.reason}`
   };
 }
