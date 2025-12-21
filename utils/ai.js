@@ -1,5 +1,123 @@
 let summarizerInstance = null;
 
+// Cache management
+const CACHE_PREFIX = 'ai_summary_cache_';
+const CACHE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
+// Create cache key from tags
+function getCacheKey(fromTag, toTag) {
+  return `${CACHE_PREFIX}${fromTag}__${toTag}`;
+}
+
+// Get cached summary
+export function getCachedSummary(fromTag, toTag) {
+  if (!fromTag || !toTag) return null;
+  
+  try {
+    const cacheKey = getCacheKey(fromTag, toTag);
+    const cached = localStorage.getItem(cacheKey);
+    
+    if (!cached) return null;
+    
+    const data = JSON.parse(cached);
+    const now = Date.now();
+    
+    // Check if cache is expired
+    if (now - data.timestamp > CACHE_MAX_AGE) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+    
+    console.log(`✨ Using cached summary for ${fromTag} → ${toTag}`);
+    return data.summary;
+  } catch (error) {
+    console.error('Error reading cache:', error);
+    return null;
+  }
+}
+
+// Save summary to cache
+export function cacheSummary(fromTag, toTag, summary) {
+  if (!fromTag || !toTag || !summary) return;
+  
+  try {
+    const cacheKey = getCacheKey(fromTag, toTag);
+    const data = {
+      summary,
+      timestamp: Date.now(),
+      fromTag,
+      toTag
+    };
+    
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    console.log(`💾 Cached summary for ${fromTag} → ${toTag}`);
+  } catch (error) {
+    console.error('Error saving to cache:', error);
+  }
+}
+
+// Clear specific cache entry
+export function clearCachedSummary(fromTag, toTag) {
+  if (!fromTag || !toTag) return;
+  
+  try {
+    const cacheKey = getCacheKey(fromTag, toTag);
+    localStorage.removeItem(cacheKey);
+    console.log(`🗑️ Cleared cache for ${fromTag} → ${toTag}`);
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+  }
+}
+
+// Clear all AI summary caches
+export function clearAllCache() {
+  try {
+    const keys = Object.keys(localStorage);
+    let cleared = 0;
+    
+    keys.forEach(key => {
+      if (key.startsWith(CACHE_PREFIX)) {
+        localStorage.removeItem(key);
+        cleared++;
+      }
+    });
+    
+    console.log(`🗑️ Cleared ${cleared} cached summaries`);
+    return cleared;
+  } catch (error) {
+    console.error('Error clearing all cache:', error);
+    return 0;
+  }
+}
+
+// Get cache statistics
+export function getCacheStats() {
+  try {
+    const keys = Object.keys(localStorage);
+    const cacheKeys = keys.filter(key => key.startsWith(CACHE_PREFIX));
+    
+    return {
+      totalCached: cacheKeys.length,
+      cacheKeys: cacheKeys.map(key => {
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          return {
+            fromTag: data.fromTag,
+            toTag: data.toTag,
+            timestamp: data.timestamp,
+            age: Date.now() - data.timestamp
+          };
+        } catch {
+          return null;
+        }
+      }).filter(Boolean)
+    };
+  } catch (error) {
+    console.error('Error getting cache stats:', error);
+    return { totalCached: 0, cacheKeys: [] };
+  }
+}
+
 // Check if Chrome's Summarization API is available
 export async function isSummarizerAvailable() {
   // Check from the docs
@@ -142,10 +260,22 @@ export function getDownloadConfirmationContent(status) {
 }
 
 // Summarize using Chrome's Summarizer API
-// Returns: { needsConfirmation: boolean, confirmationStatus?: string, result?: string }
-export async function summarizeCommits(commits, userConfirmed = false) {
+// Returns: { needsConfirmation: boolean, confirmationStatus?: string, result?: string, fromCache?: boolean }
+export async function summarizeCommits(commits, fromTag, toTag, userConfirmed = false) {
   if (!commits || commits.length === 0) {
     throw new Error('No commits to summarize');
+  }
+  
+  // Check cache first
+  if (fromTag && toTag) {
+    const cachedSummary = getCachedSummary(fromTag, toTag);
+    if (cachedSummary) {
+      return {
+        needsConfirmation: false,
+        result: cachedSummary,
+        fromCache: true
+      };
+    }
   }
   
   // Check if API is available
@@ -180,6 +310,8 @@ export async function summarizeCommits(commits, userConfirmed = false) {
     
     console.log(`Processing ${commits.length} commits`);
     
+    let finalSummary;
+    
     // Strategy 1: If commits are too many, chunk them
     if (commits.length > 20) {
       console.log('Too many commits, chunking...');
@@ -205,36 +337,34 @@ export async function summarizeCommits(commits, userConfirmed = false) {
         const combinedSummary = summaries.join(' ');
         
         console.log('Summarizing combined summaries...');
-        const finalSummary = await summarizer.summarize(combinedSummary, { context: 'These are summarized deployment changes from multiple commit summaries. Provide a concise overall summary.' });
-        
-        return {
-          needsConfirmation: false,
-          result: finalSummary
-        };
+        finalSummary = await summarizer.summarize(combinedSummary, { context: 'These are summarized deployment changes from multiple commit summaries. Provide a concise overall summary.' });
       } else {
-        return {
-          needsConfirmation: false,
-          result: summaries[0]
-        };
+        finalSummary = summaries[0];
       }
+    } else {
+      // Strategy 2: Truncate each commit to first 200 chars
+      console.log('Truncating commits...');
+      const truncatedCommits = truncateCommits(commits, 3000);
+      const text = truncatedCommits.join('\n');
+      
+      console.log(`Summarizing ${truncatedCommits.length} commits (${text.length} chars)`);
+      
+      // Summarize the text
+      finalSummary = await summarizer.summarize(text, { context: 'These are truncated commits that were shortened to first 200 characters. Provide a concise overall summary.' });
     }
-    
-    // Strategy 2: Truncate each commit to first 200 chars
-    console.log('Truncating commits...');
-    const truncatedCommits = truncateCommits(commits, 3000);
-    const text = truncatedCommits.join('\n');
-    
-    console.log(`Summarizing ${truncatedCommits.length} commits (${text.length} chars)`);
-    
-    // Summarize the text
-    const summary = await summarizer.summarize(text, { context: 'These are truncated commits that were shortened to first 200 characters. Provide a concise overall summary.' });
     
     // Keep the instance alive, don't destroy it
     console.log('Summary generated successfully, keeping instance alive');
     
+    // Cache the result
+    if (fromTag && toTag && finalSummary) {
+      cacheSummary(fromTag, toTag, finalSummary);
+    }
+    
     return {
       needsConfirmation: false,
-      result: summary
+      result: finalSummary,
+      fromCache: false
     };
   } catch (error) {
     console.error('Summarization error:', error);
