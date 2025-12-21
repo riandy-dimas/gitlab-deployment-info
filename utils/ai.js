@@ -32,7 +32,7 @@ async function createSummarizer() {
     sharedContext: "These are deployment changes from a GitLab repository. Focus on what was changed. Do not include information related to the commit's label or categorization.",
     type: 'tldr',  // 'tldr', 'teaser', 'key-points', 'headline'
     format: 'plain-text', // 'plain-text' or 'markdown'
-    length: 'medium',      // 'short', 'medium', 'long'
+    length: 'short',      // 'short', 'medium', 'long'
     monitor(m) {
       m.addEventListener('downloadprogress', (e) => {
         console.log(`Downloaded ${e.loaded} of ${e.total} bytes`);
@@ -67,8 +67,8 @@ function truncateCommits(commits, maxChars = 3000) {
   let totalLength = 0;
   
   for (const commit of commits) {
-    // Take first 100 chars of each commit to keep it concise
-    const shortCommit = commit.length > 100 ? commit.substring(0, 100) + '...' : commit;
+    // Take first 200 chars of each commit to keep it concise
+    const shortCommit = commit.length > 200 ? commit.substring(0, 200) + '...' : commit;
     
     if (totalLength + shortCommit.length > maxChars) {
       break;
@@ -90,6 +90,26 @@ function chunkCommits(commits, chunkSize = 15) {
   return chunks;
 }
 
+// Show confirmation dialog for model download
+function showDownloadConfirmation(status) {
+  let message = '';
+  
+  if (status === 'before-download') {
+    message = 'The AI Summarization model needs to be downloaded before use.\n\n' +
+              'This is a one-time download that may take several minutes depending on your connection.\n' +
+              'The download will happen in the background.\n\n' +
+              'You can monitor progress at: chrome://components/\n\n' +
+              'Do you want to start the download and continue?';
+  } else if (status === 'after-download') {
+    message = 'The AI model is currently downloading in the background.\n\n' +
+              'Please wait a few minutes for the download to complete.\n' +
+              'You can check the download progress at: chrome://components/\n\n' +
+              'Do you want to try anyway? (This may fail if download is not complete)';
+  }
+  
+  return confirm(message);
+}
+
 // Summarize using Chrome's Summarizer API
 export async function summarizeCommits(commits) {
   if (!commits || commits.length === 0) {
@@ -101,10 +121,21 @@ export async function summarizeCommits(commits) {
   console.log('Summarizer status:', summarizerStatus);
   
   if (!summarizerStatus.available) {
-    if (summarizerStatus.status === 'after-download') {
-      throw new Error('AI model is downloading. Please wait a few minutes and try again. You can check progress at chrome://components/');
-    } else if (summarizerStatus.status === 'before-download') {
-      throw new Error('AI model needs to be downloaded. It will start downloading when you click OK. Please try again in a few minutes.');
+    // Show confirmation dialog for download scenarios
+    if (summarizerStatus.status === 'after-download' || summarizerStatus.status === 'before-download') {
+      const userConfirmed = showDownloadConfirmation(summarizerStatus.status);
+      
+      if (!userConfirmed) {
+        throw new Error('AI summarization cancelled by user');
+      }
+      
+      // If user confirmed but model is still downloading, inform them
+      if (summarizerStatus.status === 'after-download') {
+        throw new Error('AI model is still downloading. Please wait a few minutes and try again. Check progress at chrome://components/');
+      }
+      
+      // For 'before-download', we'll proceed and let the API start the download
+      // The createSummarizer() call will trigger the download
     } else {
       throw new Error(`Summarizer API not available: ${summarizerStatus.reason}`);
     }
@@ -140,20 +171,15 @@ export async function summarizeCommits(commits) {
       if (summaries.length > 1) {
         const combinedSummary = summaries.join(' ');
         
-        // Summarize the summaries if combined is still reasonable length
-        if (combinedSummary.length < 3000) {
-          console.log('Summarizing combined summaries...');
-          return await summarizer.summarize(combinedSummary);
-        } else {
-          // Just return the first summary or join them
-          return summaries.join('\n\n');
-        }
+        console.log('Summarizing combined summaries...');
+        return await summarizer.summarize(combinedSummary, { context: 'These are summarized deployment changes from multiple commit summaries. Provide a concise overall summary.' });
+
       } else {
         return summaries[0];
       }
     }
     
-    // Strategy 2: Truncate each commit to first 100 chars
+    // Strategy 2: Truncate each commit to first 200 chars
     console.log('Truncating commits...');
     const truncatedCommits = truncateCommits(commits, 3000);
     const text = truncatedCommits.join('\n');
@@ -161,7 +187,7 @@ export async function summarizeCommits(commits) {
     console.log(`Summarizing ${truncatedCommits.length} commits (${text.length} chars)`);
     
     // Summarize the text
-    const summary = await summarizer.summarize(text);
+    const summary = await summarizer.summarize(text, { context: 'These are truncated commits that were shortened to first 200 characters. Provide a concise overall summary.' });
     
     // Keep the instance alive, don't destroy it
     console.log('Summary generated successfully, keeping instance alive');
