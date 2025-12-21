@@ -183,12 +183,12 @@ document.getElementById('closeSummaryModal').addEventListener('click', () => {
 document.getElementById('copySummaryBtn').addEventListener('click', () => {
   const summaryText = document.getElementById('summaryText').textContent;
   navigator.clipboard.writeText(summaryText);
-  // Show toast notification (if you have toastify)
-  Toastify({
-    text: "Summary copied to clipboard!",
-    duration: 2000,
-    className: "toast"
-  }).showToast();
+  const copySummaryBtn = document.getElementById('copySummaryBtn');
+  const initialHTML = copySummaryBtn.innerHTML;
+  setTimeout(() => {
+    copySummaryBtn.innerHTML = initialHTML;
+  }, 2000);
+  copySummaryBtn.textContent = 'Copied!';
 });
 
 // Check AI availability on load and update button state
@@ -469,20 +469,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               }
             });
           }
-
-
-          // Add modal close button handler
-          document.getElementById("closeSummaryModal").addEventListener("click", () => {
-            const modal = document.getElementById("aiSummaryModal");
-            modal.close();
-          });
-
-          // Add copy summary button handler (outside the summarize button click)
-          document.getElementById("copySummaryBtn").addEventListener("click", async () => {
-            const summaryText = document.getElementById("summaryText").textContent;
-            await navigator.clipboard.writeText(summaryText);
-            showToast('<strong>Summary copied!</strong>');
-          });
 
           makeLinksOpenInTab();
           setLoading(false);
