@@ -109,7 +109,6 @@ export function getDownloadConfirmationContent(status) {
         <ul>
           <li>Continue using Chrome normally</li>
           <li>Monitor progress at: <code>chrome://on-device-internals/</code></li>
-          <li>Close this extension and come back later</li>
         </ul>
         
         <p style="margin-top: 1rem;"><strong>Would you like to start downloading the AI model now?</strong></p>
