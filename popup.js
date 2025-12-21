@@ -131,7 +131,7 @@ document.getElementById('summarizeBtn').addEventListener('click', async () => {
     summarizeBtn.innerHTML = '<i class="fa-solid fa-spinner rotating"></i> Summarizing..';
     
     // Try to summarize with cache support (first attempt without confirmation)
-    let result = await summarizeCommits(commits, fromTag, toTag, false);
+    let result = await summarizeCommits(commits, currentRepo.project, fromTag, toTag, false);
     
     // Check if confirmation is needed
     if (result.needsConfirmation) {
@@ -150,8 +150,8 @@ document.getElementById('summarizeBtn').addEventListener('click', async () => {
       // User confirmed, try again with confirmation flag
       summarizeBtn.disabled = true;
       summarizeBtn.innerHTML = '<i class="fa-solid fa-spinner rotating"></i> Summarizing..';
-      
-      result = await summarizeCommits(commits, fromTag, toTag, true);
+
+      result = await summarizeCommits(commits, currentRepo.project, fromTag, toTag, true);
     }
     
     // Reset button state

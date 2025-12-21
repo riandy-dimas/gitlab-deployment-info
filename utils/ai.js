@@ -5,16 +5,16 @@ const CACHE_PREFIX = 'ai_summary_cache_';
 const CACHE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
 // Create cache key from tags
-function getCacheKey(fromTag, toTag) {
-  return `${CACHE_PREFIX}${fromTag}__${toTag}`;
+function getCacheKey(project,fromTag, toTag) {
+  return `${CACHE_PREFIX}__${project}__${fromTag}__${toTag}`;
 }
 
 // Get cached summary
-export function getCachedSummary(fromTag, toTag) {
+export function getCachedSummary(project, fromTag, toTag) {
   if (!fromTag || !toTag) return null;
   
   try {
-    const cacheKey = getCacheKey(fromTag, toTag);
+    const cacheKey = getCacheKey(project, fromTag, toTag);
     const cached = localStorage.getItem(cacheKey);
     
     if (!cached) return null;
@@ -37,16 +37,17 @@ export function getCachedSummary(fromTag, toTag) {
 }
 
 // Save summary to cache
-export function cacheSummary(fromTag, toTag, summary) {
+export function cacheSummary(project, fromTag, toTag, summary) {
   if (!fromTag || !toTag || !summary) return;
   
   try {
-    const cacheKey = getCacheKey(fromTag, toTag);
+    const cacheKey = getCacheKey(project, fromTag, toTag);
     const data = {
       summary,
       timestamp: Date.now(),
       fromTag,
-      toTag
+      toTag,
+      project
     };
     
     localStorage.setItem(cacheKey, JSON.stringify(data));
@@ -57,13 +58,13 @@ export function cacheSummary(fromTag, toTag, summary) {
 }
 
 // Clear specific cache entry
-export function clearCachedSummary(fromTag, toTag) {
-  if (!fromTag || !toTag) return;
+export function clearCachedSummary(project, fromTag, toTag) {
+  if (!fromTag || !toTag || !project) return;
   
   try {
-    const cacheKey = getCacheKey(fromTag, toTag);
+    const cacheKey = getCacheKey(project, fromTag, toTag);
     localStorage.removeItem(cacheKey);
-    console.log(`🗑️ Cleared cache for ${fromTag} → ${toTag}`);
+    console.log(`🗑️ Cleared cache for ${project} - ${fromTag} → ${toTag}`);
   } catch (error) {
     console.error('Error clearing cache:', error);
   }
@@ -102,6 +103,7 @@ export function getCacheStats() {
         try {
           const data = JSON.parse(localStorage.getItem(key));
           return {
+            project: data.project,
             fromTag: data.fromTag,
             toTag: data.toTag,
             timestamp: data.timestamp,
@@ -126,7 +128,7 @@ export async function isSummarizerAvailable() {
   }
   
   try {
-    const availability = await Summarizer.availability();
+    const availability = await self.Summarizer.availability();
     console.log('Summarizer availability:', availability);
     switch (availability) {
       case 'downloadable':
@@ -147,7 +149,11 @@ export async function isSummarizerAvailable() {
 // Create a summarizer session
 async function createSummarizer() {
   const defaultOptions = {
-    sharedContext: "These are deployment changes from a GitLab repository. Focus on what was changed. Do not include information related to the commit's label or categorization.",
+    sharedContext: "These are deployment changes from a GitLab repository. "
+      + "Focus on what was changed."
+      + "Do not include information related to the commit's label or categorization. "
+      + "Exclude introductory phrases like 'This gitlab...'. "
+      + "Provide information about the repository name.",
     type: 'tldr',  // 'tldr', 'teaser', 'key-points', 'headline'
     format: 'plain-text', // 'plain-text' or 'markdown'
     length: 'short',      // 'short', 'medium', 'long'
@@ -261,14 +267,14 @@ export function getDownloadConfirmationContent(status) {
 
 // Summarize using Chrome's Summarizer API
 // Returns: { needsConfirmation: boolean, confirmationStatus?: string, result?: string, fromCache?: boolean }
-export async function summarizeCommits(commits, fromTag, toTag, userConfirmed = false) {
+export async function summarizeCommits(commits, project, fromTag, toTag, userConfirmed = false) {
   if (!commits || commits.length === 0) {
     throw new Error('No commits to summarize');
   }
   
   // Check cache first
-  if (fromTag && toTag) {
-    const cachedSummary = getCachedSummary(fromTag, toTag);
+  if (project && fromTag && toTag) {
+    const cachedSummary = getCachedSummary(project, fromTag, toTag);
     if (cachedSummary) {
       return {
         needsConfirmation: false,
@@ -337,7 +343,9 @@ export async function summarizeCommits(commits, fromTag, toTag, userConfirmed = 
         const combinedSummary = summaries.join(' ');
         
         console.log('Summarizing combined summaries...');
-        finalSummary = await summarizer.summarize(combinedSummary, { context: 'These are summarized deployment changes from multiple commit summaries. Provide a concise overall summary.' });
+        finalSummary = await summarizer.summarize(combinedSummary, {
+          context: 'These are summarized deployment changes from multiple commit summaries. Provide a concise overall summary. This is project repository for ' + project + '.'
+        });
       } else {
         finalSummary = summaries[0];
       }
@@ -350,15 +358,17 @@ export async function summarizeCommits(commits, fromTag, toTag, userConfirmed = 
       console.log(`Summarizing ${truncatedCommits.length} commits (${text.length} chars)`);
       
       // Summarize the text
-      finalSummary = await summarizer.summarize(text, { context: 'These are truncated commits that were shortened to first 200 characters. Provide a concise overall summary.' });
+      finalSummary = await summarizer.summarize(text, {
+        context: 'These are truncated commits that were shortened to first 200 characters. Provide a concise overall summary. This is project repository for ' + project + '.'
+      });
     }
     
     // Keep the instance alive, don't destroy it
     console.log('Summary generated successfully, keeping instance alive');
     
     // Cache the result
-    if (fromTag && toTag && finalSummary) {
-      cacheSummary(fromTag, toTag, finalSummary);
+    if (project && fromTag && toTag && finalSummary) {
+      cacheSummary(project, fromTag, toTag, finalSummary);
     }
     
     return {
