@@ -153,7 +153,7 @@ This deployment introduces several key updates focused on the LTI integration sy
 The extension automatically caches AI summaries to provide instant results for previously summarized tag ranges.
 
 ### How Caching Works:
-- **Cache Key**: Summaries are cached based on `fromTag__toTag` combination
+- **Cache Key**: Summaries are cached based on `project__fromTag__toTag` combination
 - **Cache Duration**: 30 days (automatically expires after)
 - **Cache Indicator**: Green "(Cached)" badge appears in the summary modal
 - **Storage**: Uses browser's localStorage (no external servers)
@@ -222,6 +222,6 @@ aiCacheDebug.clear('release-v1.0', 'release-v2.0')
 
 **Cache issues:**
 - If summaries seem outdated, clear the cache with `aiCacheDebug.clearAll()`
-- If you want fresh AI summaries, clear specific cache: `aiCacheDebug.clear('fromTag', 'toTag')`
+- If you want fresh AI summaries, clear specific cache: `aiCacheDebug.clear('project', 'fromTag', 'toTag')`
 - Cache automatically expires after 30 days
 - Check cache statistics: `aiCacheDebug.stats()`
