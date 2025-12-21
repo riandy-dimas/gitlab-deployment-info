@@ -11,6 +11,7 @@ import {
   getHTMLOutput,
   getSlackChangelogs,
 } from "./utils/output.js";
+import { summarizeCommits, checkAIAvailability, cleanupSummarizer } from "./utils/ai.js";
 import { showToast } from "./utils/toast.js";
 import { makeLinksOpenInTab } from "./utils/open-link.js";
 
@@ -26,6 +27,7 @@ const dateOptions = {
 // Global variable to store repo info
 let currentRepo = null;
 let confluenceOutputGlobal = null;
+let commits = [];
 
 function setLoading(loading = true) {
   if (loading) {
@@ -44,6 +46,10 @@ function setLoading(loading = true) {
     document.getElementById("loader").style = "display: none";
   }
 }
+
+window.addEventListener('unload', () => {
+  cleanupSummarizer();
+});
 
 // Save token on button click
 document.getElementById("saveTokenBtn").addEventListener("click", () => {
@@ -209,7 +215,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           
           // Use currentRepo instead of repo
           const compareUrl = `https://gitlab.com/${currentRepo.namespace}/${currentRepo.project}/-/compare/${fromTag}...${toTag}`;
-          const commits = await fetchComparisons(
+          commits = await fetchComparisons(
             currentRepo.namespace,
             currentRepo.project,
             gitlabToken
@@ -302,6 +308,62 @@ document.addEventListener("DOMContentLoaded", async () => {
               }
             });
           }
+
+          // Add AI summarize button handler
+          const summarizeBtn = document.getElementById("summarizeBtn");
+          if (summarizeBtn) {
+            // Check availability on load and update button state
+            checkAIAvailability().then(status => {
+              if (!status.available) {
+                summarizeBtn.setAttribute('disabled', 'true');
+                summarizeBtn.title = status.status;
+              }
+            });
+            
+            summarizeBtn.addEventListener("click", async () => {
+              try {
+                if (!commits || commits.length === 0) {
+                  showToast('<strong>Error:</strong> No commits available. Generate info first.');
+                  return;
+                }
+                
+                summarizeBtn.setAttribute('disabled', 'true');
+                summarizeBtn.innerHTML = '<i class="fa-solid fa-spinner rotating"></i> Summarizing...';
+                
+                const summary = await summarizeCommits(commits);
+                
+                // Display the summary in modal
+                document.getElementById("summaryText").textContent = summary;
+                document.getElementById("aiMethod").textContent = 'Generated using Chrome Summarizer API';
+                
+                // Open the modal
+                const modal = document.getElementById("aiSummaryModal");
+                modal.showModal();
+                                
+                summarizeBtn.removeAttribute('disabled');
+                summarizeBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Summary';
+                
+              } catch (error) {
+                console.error('Summarization error:', error);
+                showToast(`<strong>Error:</strong> ${error.message}`, 'error');
+                summarizeBtn.removeAttribute('disabled');
+                summarizeBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Summary';
+              }
+            });
+          }
+
+          // Add modal close button handler
+          document.getElementById("closeSummaryModal").addEventListener("click", () => {
+            const modal = document.getElementById("aiSummaryModal");
+            modal.close();
+          });
+
+          // Add copy summary button handler (outside the summarize button click)
+          document.getElementById("copySummaryBtn").addEventListener("click", async () => {
+            const summaryText = document.getElementById("summaryText").textContent;
+            await navigator.clipboard.writeText(summaryText);
+            showToast('<strong>Summary copied!</strong>');
+          });
 
           makeLinksOpenInTab();
           setLoading(false);
