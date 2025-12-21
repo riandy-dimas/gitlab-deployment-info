@@ -61,6 +61,35 @@ async function getSummarizer() {
   return summarizerInstance;
 }
 
+// Truncate commits if too long (approximate token limit)
+function truncateCommits(commits, maxChars = 3000) {
+  const truncated = [];
+  let totalLength = 0;
+  
+  for (const commit of commits) {
+    // Take first 100 chars of each commit to keep it concise
+    const shortCommit = commit.length > 100 ? commit.substring(0, 100) + '...' : commit;
+    
+    if (totalLength + shortCommit.length > maxChars) {
+      break;
+    }
+    
+    truncated.push(shortCommit);
+    totalLength += shortCommit.length;
+  }
+  
+  return truncated;
+}
+
+// Chunk commits into smaller groups
+function chunkCommits(commits, chunkSize = 15) {
+  const chunks = [];
+  for (let i = 0; i < commits.length; i += chunkSize) {
+    chunks.push(commits.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 // Summarize using Chrome's Summarizer API
 export async function summarizeCommits(commits) {
   if (!commits || commits.length === 0) {
@@ -85,8 +114,51 @@ export async function summarizeCommits(commits) {
     // Get or create the summarizer instance
     const summarizer = await getSummarizer();
     
-    // Combine commits into a single text
-    const text = commits.join('\n');
+    console.log(`Processing ${commits.length} commits`);
+    
+    // Strategy 1: If commits are too many, chunk them
+    if (commits.length > 20) {
+      console.log('Too many commits, chunking...');
+      const chunks = chunkCommits(commits, 15);
+      const summaries = [];
+      
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const chunkText = chunk.join('\n');
+        
+        // Truncate if still too long
+        const truncatedText = chunkText.length > 3000 
+          ? chunkText.substring(0, 3000) + '...' 
+          : chunkText;
+        
+        console.log(`Summarizing chunk ${i + 1}/${chunks.length} (${truncatedText.length} chars)`);
+        const chunkSummary = await summarizer.summarize(truncatedText);
+        summaries.push(chunkSummary);
+      }
+      
+      // If we have multiple summaries, combine them
+      if (summaries.length > 1) {
+        const combinedSummary = summaries.join(' ');
+        
+        // Summarize the summaries if combined is still reasonable length
+        if (combinedSummary.length < 3000) {
+          console.log('Summarizing combined summaries...');
+          return await summarizer.summarize(combinedSummary);
+        } else {
+          // Just return the first summary or join them
+          return summaries.join('\n\n');
+        }
+      } else {
+        return summaries[0];
+      }
+    }
+    
+    // Strategy 2: Truncate each commit to first 100 chars
+    console.log('Truncating commits...');
+    const truncatedCommits = truncateCommits(commits, 3000);
+    const text = truncatedCommits.join('\n');
+    
+    console.log(`Summarizing ${truncatedCommits.length} commits (${text.length} chars)`);
     
     // Summarize the text
     const summary = await summarizer.summarize(text);
