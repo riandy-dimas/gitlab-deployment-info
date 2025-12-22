@@ -87,3 +87,8 @@ form > small {
   background: var(--pico-tooltip-background-color);
   color: var(--pico-tooltip-color);
 }
+
+.awesomplete > ul {
+  max-height: 300px;
+  overflow-y: auto;
+}

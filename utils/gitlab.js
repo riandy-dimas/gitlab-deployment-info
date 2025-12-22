@@ -1,3 +1,5 @@
+const PER_PAGE_SIZE = 50;
+
 export async function getRepoSlug() {
   let tabUrl;
 
@@ -85,7 +87,7 @@ export async function fetchTags(namespace, project, token) {
   const encodedPath = encodeURIComponent(`${namespace}/${project}`);
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const response = await fetch(
-    `https://gitlab.com/api/v4/projects/${encodedPath}/repository/tags`,
+    `https://gitlab.com/api/v4/projects/${encodedPath}/repository/tags?per_page=${PER_PAGE_SIZE}`,
     {
       headers,
     }
@@ -105,7 +107,7 @@ export async function fetchPipelines(namespace, project, token) {
   const encodedPath = encodeURIComponent(`${namespace}/${project}`);
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const response = await fetch(
-    `https://gitlab.com/api/v4/projects/${encodedPath}/pipelines?scope=tags`,
+    `https://gitlab.com/api/v4/projects/${encodedPath}/pipelines?scope=tags&per_page=${PER_PAGE_SIZE}`,
     {
       headers,
     }
