@@ -302,7 +302,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       setLoading(false);
 
-      const releaseProductionTags = tags;
+      const releaseProductionTags = tags.filter((tag) => {
+        return tag.includes("release-production");
+      });
 
       // Filter pipelines containing "release-production"
       const releaseProductionPipelines = pipelines.filter((pipeline) => {
@@ -316,7 +318,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         list: tags,
         sort: false,
         minChars: 0,
-        maxItems: 10,
+        maxItems: 50,
         autoFirst: true,
         filter: function (text, input) {
           return true; // Show all items
@@ -328,7 +330,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         list: tags,
         sort: false,
         minChars: 0,
-        maxItems: 10,
+        maxItems: 50,
         autoFirst: true,
         filter: function (text, input) {
           return true; // Show all items
@@ -340,7 +342,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         list: pipelines,
         sort: false,
         minChars: 0,
-        maxItems: 10,
+        maxItems: 50,
         autoFirst: true,
         filter: function (text, input) {
           return true; // Show all items
