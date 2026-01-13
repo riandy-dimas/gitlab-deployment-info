@@ -108,10 +108,62 @@
           </button>
           <button class="btn" id="fillReleaseBtn">
             <i class="fa-brands fa-gitlab"></i>
-            Fill Gitlab Release Notes
+            Fill Release Notes
+          </button>
+          <button class="btn" id="summarizeBtn">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            AI Summary
           </button>
         </div>
       </article>
+
+      <!-- AI Summary Result Modal -->
+      <dialog id="aiSummaryModal">
+        <article>
+          <header>
+            <button aria-label="Close" rel="prev" id="closeSummaryModal"></button>
+            <p>
+              <strong>
+                <i class="fa-solid fa-sparkles"></i>AI Summary
+              </strong>
+            </p>
+            <small id="aiMethod" style="color: #666;"></small>
+          </header>
+          <p id="summaryText" style="line-height: 1.6; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"></p>
+          <footer>
+            <button id="copySummaryBtn" class="btn secondary">
+              <i class="fa-solid fa-copy"></i>
+              Copy Summary
+            </button>
+          </footer>
+        </article>
+      </dialog>
+
+      <!-- AI Model Download Confirmation Modal -->
+      <dialog id="aiDownloadModal">
+        <article>
+          <header>
+            <p>
+              <strong>
+                <i class="fa-solid fa-brain"></i> <span id="downloadModalTitle">AI Model Download</span>
+              </strong>
+            </p>
+          </header>
+          <div id="downloadModalContent" style="line-height: 1.8;">
+            <!-- Content will be injected dynamically -->
+          </div>
+          <footer style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button id="cancelDownloadBtn" class="btn secondary" role="button">
+              <i class="fa-solid fa-xmark"></i>
+              Cancel
+            </button>
+            <button id="confirmDownloadBtn" class="btn" style="margin: 0;" role="button">
+              <i class="fa-solid fa-check"></i>
+              <span id="confirmDownloadText">Continue</span>
+            </button>
+          </footer>
+        </article>
+      </dialog>
     </main>
     <script type="module" src="popup.js"></script>
     <script src="libs/awesomplete/awesomplete.min.js" defer></script>

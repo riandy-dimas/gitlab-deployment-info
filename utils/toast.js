@@ -19,7 +19,7 @@ export function showToast(message, type = "info") {
     style: {
       background: bgColors[type] || bgColors.info,
       maxWidth: "none",
-      width: "100vw"
-    }
+      width: "100vw",
+    },
   }).showToast();
 }

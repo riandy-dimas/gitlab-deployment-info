@@ -11,6 +11,12 @@ import {
   getHTMLOutput,
   getSlackChangelogs,
 } from "./utils/output.js";
+import {
+  summarizeCommits,
+  checkAIAvailability,
+  cleanupSummarizer,
+  getDownloadConfirmationContent,
+} from "./utils/ai.js";
 import { showToast } from "./utils/toast.js";
 import { makeLinksOpenInTab } from "./utils/open-link.js";
 
@@ -26,6 +32,7 @@ const dateOptions = {
 // Global variable to store repo info
 let currentRepo = null;
 let confluenceOutputGlobal = null;
+let commits = [];
 
 function setLoading(loading = true) {
   if (loading) {
@@ -44,6 +51,208 @@ function setLoading(loading = true) {
     document.getElementById("loader").style = "display: none";
   }
 }
+
+window.addEventListener("unload", () => {
+  cleanupSummarizer();
+});
+
+// Get modal elements
+const aiDownloadModal = document.getElementById("aiDownloadModal");
+const downloadModalTitle = document.getElementById("downloadModalTitle");
+const downloadModalContent = document.getElementById("downloadModalContent");
+const confirmDownloadBtn = document.getElementById("confirmDownloadBtn");
+const cancelDownloadBtn = document.getElementById("cancelDownloadBtn");
+const confirmDownloadText = document.getElementById("confirmDownloadText");
+
+// Function to show download confirmation modal
+function showDownloadConfirmation(status) {
+  return new Promise((resolve) => {
+    const content = getDownloadConfirmationContent(status);
+
+    if (!content) {
+      resolve(false);
+      return;
+    }
+
+    // Update modal content
+    downloadModalTitle.textContent = content.title;
+    downloadModalContent.innerHTML = content.content;
+    confirmDownloadText.textContent = content.confirmText;
+
+    // Show modal
+    aiDownloadModal.showModal();
+
+    // Handle confirm
+    const handleConfirm = () => {
+      aiDownloadModal.close();
+      cleanup();
+      resolve(true);
+    };
+
+    // Handle cancel
+    const handleCancel = () => {
+      aiDownloadModal.close();
+      cleanup();
+      resolve(false);
+    };
+
+    // Cleanup listeners
+    const cleanup = () => {
+      confirmDownloadBtn.removeEventListener("click", handleConfirm);
+      cancelDownloadBtn.removeEventListener("click", handleCancel);
+    };
+
+    // Add event listeners
+    confirmDownloadBtn.addEventListener("click", handleConfirm);
+    cancelDownloadBtn.addEventListener("click", handleCancel);
+  });
+}
+
+// AI Summary button click handler
+document.getElementById("summarizeBtn").addEventListener("click", async () => {
+  try {
+    if (!commits || commits.length === 0) {
+      throw new Error(
+        "No commits to summarize. Please generate deployment info first."
+      );
+    }
+
+    // Get the fromTag and toTag values from your form
+    const fromTag = document.getElementById("fromTag").value.trim();
+    const toTag = document.getElementById("toTag").value.trim();
+
+    if (!fromTag || !toTag) {
+      throw new Error("Please select both source and target tags");
+    }
+
+    // Show loading state
+    const summarizeBtn = document.getElementById("summarizeBtn");
+    const originalBtnContent = summarizeBtn.innerHTML;
+    summarizeBtn.disabled = true;
+    summarizeBtn.innerHTML =
+      '<i class="fa-solid fa-spinner rotating"></i> Summarizing..';
+
+    // Try to summarize with cache support (first attempt without confirmation)
+    let result = await summarizeCommits(
+      commits,
+      currentRepo.project,
+      fromTag,
+      toTag,
+      false
+    );
+
+    // Check if confirmation is needed
+    if (result.needsConfirmation) {
+      // Reset button state
+      summarizeBtn.disabled = false;
+      summarizeBtn.innerHTML = originalBtnContent;
+
+      // Show confirmation modal
+      const userConfirmed = await showDownloadConfirmation(
+        result.confirmationStatus
+      );
+
+      if (!userConfirmed) {
+        console.log("User cancelled AI model download");
+        return;
+      }
+
+      // User confirmed, try again with confirmation flag
+      summarizeBtn.disabled = true;
+      summarizeBtn.innerHTML =
+        '<i class="fa-solid fa-spinner rotating"></i> Summarizing..';
+
+      result = await summarizeCommits(
+        commits,
+        currentRepo.project,
+        fromTag,
+        toTag,
+        true
+      );
+    }
+
+    // Reset button state
+    summarizeBtn.disabled = false;
+    summarizeBtn.innerHTML = originalBtnContent;
+
+    // Show the summary in the result modal
+    if (result.result) {
+      showAISummaryModal(result.result, result.fromCache, fromTag, toTag);
+    }
+  } catch (error) {
+    // Reset button state
+    const summarizeBtn = document.getElementById("summarizeBtn");
+    summarizeBtn.disabled = false;
+    summarizeBtn.innerHTML =
+      '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Summary';
+
+    // Show error
+    console.error("AI Summary error:", error);
+    showToast(`<strong>Error:</strong> ${error.message}`, "error");
+  }
+});
+
+// Function to show AI summary result modal
+function showAISummaryModal(
+  summary,
+  fromCache = false,
+  fromTag = "",
+  toTag = ""
+) {
+  const aiSummaryModal = document.getElementById("aiSummaryModal");
+  const summaryText = document.getElementById("summaryText");
+  const aiMethod = document.getElementById("aiMethod");
+
+  summaryText.textContent = summary;
+
+  if (fromCache) {
+    aiMethod.innerHTML = `<i class="fa-solid fa-bolt"></i> Generated by Gemini Nano <span style="color: #10b981;">(Cached)</span>`;
+    console.log(`✨ Loaded from cache: ${fromTag} → ${toTag}`);
+  } else {
+    aiMethod.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generated by Gemini Nano`;
+    console.log(`🤖 Freshly generated and cached: ${fromTag} → ${toTag}`);
+  }
+
+  aiSummaryModal.showModal();
+}
+
+// Close summary modal
+document.getElementById("closeSummaryModal").addEventListener("click", () => {
+  document.getElementById("aiSummaryModal").close();
+});
+
+// Copy summary button
+document.getElementById("copySummaryBtn").addEventListener("click", () => {
+  const summaryText = document.getElementById("summaryText").textContent;
+  navigator.clipboard.writeText(summaryText);
+  const copySummaryBtn = document.getElementById("copySummaryBtn");
+  const initialHTML = copySummaryBtn.innerHTML;
+  setTimeout(() => {
+    copySummaryBtn.innerHTML = initialHTML;
+  }, 2000);
+  copySummaryBtn.textContent = "Copied!";
+});
+
+// Check AI availability on load and update button state
+async function updateAIButtonState() {
+  const aiStatus = await checkAIAvailability();
+  const summarizeBtn = document.getElementById("summarizeBtn");
+
+  // Enable/disable button based on availability
+  summarizeBtn.disabled = !aiStatus.buttonEnabled;
+
+  // Update button title/tooltip
+  summarizeBtn.title = aiStatus.status;
+
+  // Optionally update button text if not ready
+  if (!aiStatus.available && aiStatus.buttonEnabled) {
+    const icon = '<i class="fa-solid fa-download"></i>';
+    summarizeBtn.innerHTML = `${icon} Download AI Model`;
+  }
+}
+
+// Call on page load
+updateAIButtonState();
 
 // Save token on button click
 document.getElementById("saveTokenBtn").addEventListener("click", () => {
@@ -211,7 +420,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           // Use currentRepo instead of repo
           const compareUrl = `https://gitlab.com/${currentRepo.namespace}/${currentRepo.project}/-/compare/${fromTag}...${toTag}`;
-          const commits = await fetchComparisons(
+          commits = await fetchComparisons(
             currentRepo.namespace,
             currentRepo.project,
             gitlabToken
