@@ -14,18 +14,58 @@ import {
 import { showToast } from "./utils/toast.js";
 import { makeLinksOpenInTab } from "./utils/open-link.js";
 
-const dateOptions = {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-};
-
 // Global variable to store repo info
 let currentRepo = null;
 let confluenceOutputGlobal = null;
+let generatedData = null;
+
+function clearOutput() {
+  generatedData = null;
+  confluenceOutputGlobal = null;
+  document.getElementById("copyButton").style.display = "none";
+  document.getElementById("output").textContent = "";
+}
+
+async function copyMarkdown(text, message) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(message, "success");
+  } catch {
+    showToast("Could not copy to the clipboard. Try again.", "error");
+  }
+}
+
+async function fillReleaseNotes() {
+  if (!confluenceOutputGlobal) return;
+  try {
+    const tabs = await chrome.tabs.query({});
+    const releaseUrl = `https://gitlab.com/${currentRepo.namespace}/${currentRepo.project}/-/releases/new`;
+    const releaseTab = tabs.find((tab) => tab.url?.split(/[?#]/)[0] === releaseUrl);
+    if (!releaseTab) {
+      showToast("Open the New release page for this repository first.", "error");
+      return;
+    }
+    await chrome.scripting.executeScript({ target: { tabId: releaseTab.id }, files: ["content.js"] });
+    const response = await chrome.tabs.sendMessage(releaseTab.id, {
+      action: "fillReleaseNotes", content: confluenceOutputGlobal,
+    });
+    if (!response?.success) throw new Error("Release notes could not be filled");
+    showToast("Release notes filled successfully.", "success");
+  } catch (error) {
+    console.error("Error filling release notes:", error);
+    showToast("Could not fill release notes. Refresh the release page and try again.", "error");
+  }
+}
+
+document.getElementById("copyMD").addEventListener("click", () => {
+  if (confluenceOutputGlobal) copyMarkdown(confluenceOutputGlobal, "Markdown copied!");
+});
+
+document.getElementById("copyChanges").addEventListener("click", () => {
+  if (generatedData) copyMarkdown(getSlackChangelogs(generatedData), "Changelogs copied!");
+});
+
+document.getElementById("fillReleaseBtn").addEventListener("click", fillReleaseNotes);
 
 function setLoading(loading = true) {
   if (loading) {
@@ -193,146 +233,47 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       setRoundedDatetimeLocal(document.getElementById("dateTime"));
 
-      document
-        .getElementById("formData")
-        .addEventListener("submit", async function (event) {
-          if (!this.checkValidity()) {
-            event.preventDefault(); // Cancel form submission
-            // Optionally, show native error messages
-            this.reportValidity();
-          }
-          event.preventDefault();
+      for (const input of [fromTagInput, toTagInput, pipelineInput, document.getElementById("dateTime")]) {
+        input.addEventListener("input", clearOutput);
+        input.addEventListener("awesomplete-selectcomplete", clearOutput);
+      }
 
-          setLoading(true);
+      document.getElementById("formData").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        if (!this.checkValidity()) {
+          this.reportValidity();
+          return;
+        }
+        clearOutput();
+        setLoading(true);
+        try {
           const dateTime = document.getElementById("dateTime");
-          const pipeline = document.getElementById("pipeline");
-          const fromTag = document.getElementById("fromTag").value;
-          const toTag = document.getElementById("toTag").value;
-
-          // Use currentRepo instead of repo
-          const compareUrl = `https://gitlab.com/${currentRepo.namespace}/${currentRepo.project}/-/compare/${fromTag}...${toTag}`;
-          const commits = await fetchComparisons(
-            currentRepo.namespace,
-            currentRepo.project,
-            gitlabToken
-          );
-
+          const fromTag = fromTagInput.value;
+          const toTag = toTagInput.value;
+          const selectedPipeline = pipelines.find((item) => item.label === pipelineInput.value);
+          if (!selectedPipeline) throw new Error("Choose a deployment pipeline from the list.");
+          if (selectedPipeline.ref !== toTag) throw new Error("The deployment pipeline must match the current deployment tag.");
+          pipelineInput.setAttribute("data-value", selectedPipeline.value);
+          if (fromTag === toTag) throw new Error("Choose different previous and current deployment tags.");
+          const compareUrl = `https://gitlab.com/${currentRepo.namespace}/${currentRepo.project}/-/compare/${encodeURIComponent(fromTag)}...${encodeURIComponent(toTag)}?straight=true`;
+          const commits = await fetchComparisons(currentRepo.namespace, currentRepo.project, gitlabToken);
           const data = {
-            repo: currentRepo,
-            commits,
-            compareUrl,
-            dateTime,
-            pipeline,
+            repo: currentRepo, commits, compareUrl, dateTime, pipeline: pipelineInput,
+            previousTag: fromTag, currentTag: toTag,
           };
-
-          const slackOutput = getSlackChangelogs(data);
-          const confluenceOutput = getGitlabInfo(data);
-          const htmlOuput = getHTMLOutput(data);
-
-          // Store confluenceOutput globally
-          confluenceOutputGlobal = confluenceOutput;
-
-          document.getElementById("copyButton").style =
-            "display: grid; grid-template-columns: 1fr 1fr; gap: 8px;";
-
-          document.getElementById("output").innerHTML = htmlOuput;
-
-          document
-            .getElementById("copyMD")
-            .addEventListener("click", async () => {
-              await navigator.clipboard.writeText(confluenceOutput);
-              showToast(
-                `<strong>Markdown copied!</strong><br/>You can paste it in the release page.`,
-                "success"
-              );
-            });
-
-          document
-            .getElementById("copyChanges")
-            .addEventListener("click", async () => {
-              await navigator.clipboard.writeText(slackOutput);
-              showToast(
-                `<strong>Changelogs copied!</strong><br />You can paste the changes elsewhere now.`,
-                "success"
-              );
-            });
-
-          // Add fill release button handler
-          const fillReleaseBtn = document.getElementById("fillReleaseBtn");
-          if (fillReleaseBtn) {
-            fillReleaseBtn.addEventListener("click", async () => {
-              try {
-                // Always get the current active tab instead of using stored URL
-                const tabs = await chrome.tabs.query({});
-                const releaseTab = tabs.find(
-                  (tab) => tab.url && tab.url.includes("/releases/new")
-                );
-
-                if (!releaseTab) {
-                  showToast(
-                    "<strong>Error:</strong> Release page not found. Please open the <strong>New release</strong> page first.",
-                    "error"
-                  );
-                  return;
-                }
-
-                // Inject content script if not already injected
-                try {
-                  await chrome.scripting.executeScript({
-                    target: { tabId: releaseTab.id },
-                    files: ["content.js"],
-                  });
-                } catch (e) {
-                  // Script might already be injected, continue
-                  console.log("Content script already injected or error:", e);
-                }
-
-                // Wait a bit for script to be ready
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                // Send message to content script
-                try {
-                  const response = await chrome.tabs.sendMessage(
-                    releaseTab.id,
-                    {
-                      action: "fillReleaseNotes",
-                      content: confluenceOutputGlobal,
-                    }
-                  );
-
-                  if (response && response.success) {
-                    showToast(
-                      "<strong>Success!</strong> Release notes filled successfully.",
-                      "success"
-                    );
-                  } else {
-                    showToast(
-                      `<strong>Error:</strong> ${
-                        response?.error || "Unknown error"
-                      }`,
-                      "error"
-                    );
-                  }
-                } catch (msgError) {
-                  console.error("Message error:", msgError);
-                  showToast(
-                    "<strong>Error:</strong> Could not communicate with the page. Try refreshing the release page.",
-                    "error"
-                  );
-                }
-              } catch (error) {
-                console.error("Error filling release notes:", error);
-                showToast(
-                  "<strong>Error:</strong> Could not fill release notes. Make sure the release page is open.",
-                  "error"
-                );
-              }
-            });
-          }
-
+          confluenceOutputGlobal = getGitlabInfo(data);
+          generatedData = data;
+          document.getElementById("output").innerHTML = getHTMLOutput(data);
+          document.getElementById("copyButton").style.display = "grid";
           makeLinksOpenInTab();
+        } catch (error) {
+          console.error("Error generating deployment notes:", error);
+          clearOutput();
+          document.getElementById("output").textContent = error.message || "Could not generate deployment notes. Try again.";
+        } finally {
           setLoading(false);
-        });
+        }
+      });
     } catch (err) {
       console.error(err);
       document.getElementById("gitlabToken").style = "pointer-events: none";

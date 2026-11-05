@@ -15,7 +15,7 @@
   <body style="height: 100%">
     <main
       class="container"
-      style="width: 100%; padding: 0; height: 100%; overflow: hidden"
+      style="width: 100%; padding: 0; min-height: 100%"
     >
       <article style="margin: 0; height: 100%">
         <h4 class="title" id="title">
@@ -50,17 +50,17 @@
             id="dateTime"
             type="datetime-local"
             name="datetime-local"
-            aria-label="Datetime local"
+            aria-label="Deployment Time"
             aria-describedby="date-time-helper"
             required
           />
-          <small id="date-time-helper">Deployment Time</small>
+          <small id="date-time-helper">Deployment Time (your local timezone)</small>
           <br />
           <fieldset style="margin-bottom: 0">
             <label>
-              Pipeline ID
+              Deployment pipeline
               <input
-                placeholder="Pipeline"
+                placeholder="Select the current deployment pipeline"
                 type="text"
                 id="pipeline"
                 required
@@ -69,26 +69,30 @@
           </fieldset>
           <fieldset style="margin-bottom: 0">
             <label>
-              Source Tag
+              Previous deployment tag
               <input
-                placeholder="Source Tag"
+                placeholder="Tag currently live in production"
                 class="awesomplete"
                 type="text"
                 id="fromTag"
+                aria-describedby="previous-tag-helper"
                 required
               />
+              <small id="previous-tag-helper">The last tag actually deployed to production, including hotfixes.</small>
             </label>
           </fieldset>
           <fieldset style="margin-bottom: 0">
             <label>
-              Target Tag
+              Current deployment tag
               <input
-                placeholder="Target Tag"
+                placeholder="Tag for the deployment being documented"
                 class="awesomplete"
                 type="text"
                 id="toTag"
+                aria-describedby="current-tag-helper"
                 required
               />
+              <small id="current-tag-helper">The tag you are preparing or recording this deployment for.</small>
             </label>
           </fieldset>
           <button id="generateBtn" class="btn" type="submit">

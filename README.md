@@ -15,6 +15,7 @@ https://github.com/user-attachments/assets/13439d51-86cb-4a7e-b208-45fcf42d3dc2
 - 🧠 Automatically appends links to JIRA issues mentioned in the changelog
 - 🧩 Works as a Chrome extension on GitLab repository pages
 - 💡 Autofill release notes in Gitlab New Release page
+- 🧹 Filters release bookkeeping and changes already present in the previous deployment
 
 ---
 
@@ -36,7 +37,7 @@ https://github.com/user-attachments/assets/b71665e7-aae3-4768-b110-576cbb021530
 1. Open any GitLab repository page / Gitlab New Release page
 2. Click the extension icon
 3. (Optional) Pin it to your toolbar for quick access
-4. Fill in the required details (tags, pipeline, date)
+4. Select the **Previous deployment tag** (the last tag actually deployed to production, including hotfixes), **Current deployment tag** (the deployment being documented), its **Deployment pipeline**, and deployment time. The preselected tags are suggestions; confirm the previous one is actually live.
 5. Copy the generated markdown for Gitlab Release Page, Confluence or Slack
 6. You can also click the fill release notes automatically when you are in **Gitlab New Release Page**
 
@@ -89,3 +90,14 @@ https://github.com/user-attachments/assets/b71665e7-aae3-4768-b110-576cbb021530
 
 - This extension scans Git logs between selected tags and tries to match JIRA keys (e.g., `MIL-12345`) and automatically converts them into links using the provided `BASE_JIRA_URL`.
 - Make sure your commit messages consistently include JIRA issue keys to take full advantage of this feature.
+- All output formats exclude conventional `docs:`, `test:`, and `style:` commits (including scopes and Jira prefixes), release/version/changelog bookkeeping, generated merge messages, and exact duplicate titles. Dependency/security fixes, runtime upgrades, deployment changes, refactors, and reverts remain eligible.
+- Comparisons use the previous deployment tag directly. To recognize cherry-picks with different commit SHAs, the extension checks whether every file change is already present in that tag's contents. A matching Jira key or title alone never proves a change was deployed; title duplicates are removed only after checking the changes.
+- Cherry-pick detection is conservative: changed/conflicting context, ambiguous repeated text, renames, binary changes, merge commits, and incomplete diffs remain listed when the extension cannot confirm the entire change is already present. Reverted changes being reapplied remain eligible. GitLab request failures stop generation so incomplete notes cannot be copied.
+
+## Verification
+
+Run the regression checks with Node.js 24 or later (no dependencies required):
+
+```sh
+node --test tests/changelog.test.mjs
+```

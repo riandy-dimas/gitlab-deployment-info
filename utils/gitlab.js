@@ -1,4 +1,42 @@
+import { filterChangelogCommits, hasCompletePatch, isFileChangeAlreadyApplied, isRevertCommit } from "./changelog.js";
+
 const PER_PAGE_SIZE = 50;
+
+async function fetchJson(url, headers, allowMissing = false) {
+  const response = await fetch(url, { headers });
+  if (allowMissing && response.status === 404) return null;
+  if (!response.ok) throw new Error(`GitLab request failed (${response.status}). Check your access and try again.`);
+  return response.json();
+}
+
+async function fetchPages(url, headers) {
+  const results = [];
+  let page = 1;
+  while (page) {
+    const pageUrl = new URL(url);
+    pageUrl.searchParams.set("per_page", "100");
+    pageUrl.searchParams.set("page", String(page));
+    const response = await fetch(pageUrl.toString(), { headers });
+    if (!response.ok) throw new Error(`GitLab request failed (${response.status}). Check your access and try again.`);
+    const items = await response.json();
+    results.push(...items);
+    const next = response.headers.get("x-next-page");
+    page = next === null ? (items.length === 100 ? page + 1 : 0) : Number(next);
+  }
+  return results;
+}
+
+async function mapConcurrent(items, callback) {
+  const results = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(4, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await callback(items[index]);
+    }
+  }));
+  return results;
+}
 
 export async function getRepoSlug() {
   let tabUrl;
@@ -133,18 +171,37 @@ export async function fetchComparisons(namespace, project, token) {
     throw new Error("From and to tag is not defined");
   }
 
-  const response = await fetch(
-    `https://gitlab.com/api/v4/projects/${encodedPath}/repository/compare?from=${fromTag}&to=${toTag}`,
-    {
-      headers,
+  const repositoryUrl = `https://gitlab.com/api/v4/projects/${encodedPath}/repository`;
+  const params = new URLSearchParams({ from: fromTag, to: toTag, straight: "true" });
+  const comparisons = await fetchJson(`${repositoryUrl}/compare?${params}`, headers);
+  const candidates = filterChangelogCommits(comparisons.commits, { deduplicate: false });
+  const files = new Map();
+  function getFile(path, ref) {
+    const key = JSON.stringify([path, ref]);
+    if (!files.has(key)) {
+      const query = new URLSearchParams({ ref });
+      files.set(key, fetchJson(`${repositoryUrl}/files/${encodeURIComponent(path)}?${query}`, headers, true));
     }
-  );
+    return files.get(key);
+  }
 
-  if (!response.ok) throw new Error("Failed to fetch comparisons");
-  const comparisons = await response.json();
-  return comparisons.commits
-    .filter((commit) => !commit.title.startsWith("Merge branch"))
-    .map((commit) => commit.title);
+  const alreadyApplied = await mapConcurrent(candidates, async (commit) => {
+    // Reverts are operationally significant, even when they restore old content.
+    if (isRevertCommit(commit)) return false;
+    const commitUrl = `${repositoryUrl}/commits/${encodeURIComponent(commit.id)}`;
+    const details = await fetchJson(commitUrl, headers);
+    if (details.parent_ids?.length > 1) return false;
+    const diffs = await fetchPages(`${commitUrl}/diff`, headers);
+    if (!hasCompletePatch(diffs, details.stats)) return false;
+    for (const diff of diffs) {
+      const baseline = await getFile(diff.new_path, fromTag);
+      const target = diff.deleted_file ? null : await getFile(diff.new_path, commit.id);
+      if (!isFileChangeAlreadyApplied(diff, baseline, target)) return false;
+    }
+    return true;
+  });
+  const newCommits = candidates.filter((_, index) => !alreadyApplied[index]);
+  return filterChangelogCommits(newCommits).map((commit) => commit.title);
 }
 
 export async function fetchRepoDetails(namespace, project, token) {
