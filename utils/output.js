@@ -9,6 +9,12 @@ const DATE_OPTIONS = {
   hour12: false,
 };
 
+export function getPipelineInfo(pipeline) {
+  const value = pipeline.value || pipeline.getAttribute("value") || "";
+  const number = value.match(/^#?(\d+)/)?.[1] || value;
+  return { number, url: pipeline.getAttribute("data-value") || "" };
+}
+
 export function getSlackChangelogs({ commits }) {
   return `${commits.map((c) => `${getEmoji(c)} ${c}`).join("\n")}
 `;
@@ -23,9 +29,7 @@ export function getGitlabInfo({
 }) {
   const fromTag = document.getElementById("fromTag");
   const toTag = document.getElementById("toTag");
-  const pipelineValue = pipeline.value || pipeline.getAttribute("value") || "";
-  const pipelineUrl = pipeline.getAttribute("data-value") || "";
-  const [pipelineNumber] = pipelineValue.split(" - ");
+  const { number: pipelineNumber, url: pipelineUrl } = getPipelineInfo(pipeline);
   const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${toTag.value}`;
 
   return `
@@ -56,9 +60,7 @@ export function getHTMLOutput({
   dateTime,
 }) {
   const toTag = document.getElementById("toTag");
-  const pipelineValue = pipeline.value || pipeline.getAttribute("value") || "";
-  const pipelineUrl = pipeline.getAttribute("data-value") || "";
-  const [pipelineNumber] = pipelineValue.split(" - ");
+  const { number: pipelineNumber, url: pipelineUrl } = getPipelineInfo(pipeline);
   const refURL = `https://gitlab.com/${repo.namespace}/${repo.project}/-/tags/${toTag.value}`;
 
   return `

@@ -20,6 +20,12 @@ button {
   width: 100%;
 }
 
+.awesomplete .visually-hidden {
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .btn {
   width: 100%;
   display: flex;
@@ -77,12 +83,29 @@ form > small {
 }
 #copyButton {
   display: none;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
 #fillReleaseBtn {
   grid-column: 1 / -1;
 }
+
+button.btn {
+  min-height: 40px;
+  max-height: none;
+  white-space: normal;
+}
+
+label small {
+  color: var(--pico-muted-color);
+  font-size: 0.85em;
+}
+
+#output {
+  overflow-wrap: anywhere;
+}
+
 .toast {
   background: var(--pico-tooltip-background-color);
   color: var(--pico-tooltip-color);
